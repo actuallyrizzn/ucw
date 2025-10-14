@@ -489,7 +489,7 @@ This approach gives the agent total reach *within that defined sandbox*, while k
 ## 🙏 Acknowledgments
 
 - Inspired by the need for seamless command-line tool integration
-- Built for the Animus Letta MCP Server ecosystem
+- Built for the Animus, SanctumOS and Letta MCP Server ecosystem
 - Thanks to the Python community for excellent standard library tools
 
 ## 📞 Support
