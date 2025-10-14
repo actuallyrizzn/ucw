@@ -15,12 +15,15 @@ class CommandSpec:
     name: str
     usage: str
     options: List["OptionSpec"]
+    positional_args: List["PositionalArgSpec"] = None
     description: str = ""
     examples: List[str] = None
     
     def __post_init__(self):
         if self.examples is None:
             self.examples = []
+        if self.positional_args is None:
+            self.positional_args = []
 
 
 @dataclass
@@ -37,6 +40,21 @@ class OptionSpec:
     def is_boolean(self) -> bool:
         """Check if this is a boolean flag (no value)."""
         return not self.takes_value
+
+
+@dataclass
+class PositionalArgSpec:
+    """Represents a positional argument."""
+    name: str
+    required: bool
+    variadic: bool = False  # True for args like FILE... (multiple values)
+    description: Optional[str] = None
+    type_hint: Optional[str] = None
+    
+    @property
+    def is_optional(self) -> bool:
+        """Check if this argument is optional (wrapped in brackets)."""
+        return not self.required
 
 
 @dataclass

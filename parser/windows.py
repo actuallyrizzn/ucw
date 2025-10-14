@@ -9,7 +9,7 @@ import re
 from typing import List, Optional
 
 from .base import BaseParser
-from models import CommandSpec, OptionSpec
+from models import CommandSpec, OptionSpec, PositionalArgSpec
 
 
 class WindowsParser(BaseParser):
@@ -40,6 +40,7 @@ class WindowsParser(BaseParser):
         """Parse Windows help text into CommandSpec."""
         usage = self._extract_usage(help_text)
         options = self._extract_options(help_text)
+        positional_args = self._extract_positional_args(usage)
         description = self._extract_description(help_text)
         examples = self._extract_examples(help_text)
         
@@ -47,6 +48,7 @@ class WindowsParser(BaseParser):
             name=command_name,
             usage=usage,
             options=options,
+            positional_args=positional_args,
             description=description,
             examples=examples
         )

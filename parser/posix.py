@@ -54,6 +54,7 @@ class PosixParser(BaseParser):
         """Parse POSIX help text into CommandSpec."""
         usage = self._extract_usage(help_text)
         options = self._extract_options(help_text)
+        positional_args = self._extract_positional_args(usage)
         description = self._extract_description(help_text)
         examples = self._extract_examples(help_text)
         
@@ -61,6 +62,7 @@ class PosixParser(BaseParser):
             name=command_name,
             usage=usage,
             options=options,
+            positional_args=positional_args,
             description=description,
             examples=examples
         )
@@ -68,37 +70,52 @@ class PosixParser(BaseParser):
     def _is_option_line(self, line: str) -> bool:
         """Check if a line contains a POSIX option definition."""
         # POSIX options typically start with - or --
-        return bool(re.match(r'^\s*-[a-zA-Z]', line))
+        # Handle both short options (-a) and long options (--all)
+        return bool(re.match(r'^\s*-[a-zA-Z]', line) or re.match(r'^\s*--[a-zA-Z]', line))
     
     def _parse_option_line(self, line: str) -> Optional[OptionSpec]:
         """Parse a POSIX option line."""
         # Pattern: -o, --option    Description text
         # Pattern: -o, --option=ARG    Description text
         # Pattern: --option[=ARG]    Description text
+        # Pattern: --option=SIZE    Description text
         
-        # Handle short and long options
-        match = re.match(r'^\s*(-[a-zA-Z](?:,\s*--[a-zA-Z][a-zA-Z0-9-]*)?(?:=\w+)?)\s+(.+)', line)
-        if not match:
-            return None
+        # More comprehensive regex to handle various option formats
+        patterns = [
+            # Short and long options: -a, --all    description
+            r'^\s*(-[a-zA-Z])(?:,\s*(--[a-zA-Z][a-zA-Z0-9-]*))?\s+(.+)',
+            # Long option only: --all    description
+            r'^\s*(--[a-zA-Z][a-zA-Z0-9-]*)\s+(.+)',
+            # Long option with equals: --block-size=SIZE    description
+            r'^\s*(--[a-zA-Z][a-zA-Z0-9-]*=\w+)\s+(.+)',
+        ]
         
-        flag_part, description = match.groups()
+        for pattern in patterns:
+            match = re.match(pattern, line)
+            if match:
+                groups = match.groups()
+                if len(groups) == 3:  # Short and long options
+                    short_flag, long_flag, description = groups
+                    primary_flag = long_flag if long_flag else short_flag
+                elif len(groups) == 2:  # Long option only
+                    primary_flag, description = groups
+                else:
+                    continue
+                
+                # Determine if it takes a value
+                takes_value = '=' in primary_flag or any(word in description.upper() for word in ['ARG', 'SIZE', 'WORD', 'COLS', 'PATTERN', 'WHEN'])
+                
+                # Infer type hint
+                type_hint = self._infer_type_hint(description)
+                
+                return OptionSpec(
+                    flag=primary_flag,
+                    takes_value=takes_value,
+                    description=description.strip(),
+                    type_hint=type_hint
+                )
         
-        # Extract flags
-        flags = [f.strip() for f in flag_part.split(',')]
-        primary_flag = flags[0]
-        
-        # Determine if it takes a value
-        takes_value = '=' in flag_part or 'ARG' in description.upper()
-        
-        # Infer type hint
-        type_hint = self._infer_type_hint(description)
-        
-        return OptionSpec(
-            flag=primary_flag,
-            takes_value=takes_value,
-            description=description.strip(),
-            type_hint=type_hint
-        )
+        return None
     
     def _extract_description(self, help_text: str) -> str:
         """Extract command description from help text."""
