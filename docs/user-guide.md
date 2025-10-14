@@ -495,6 +495,47 @@ def validate_wrapper(wrapper):
 2. **Batch Operations**: Process multiple commands efficiently
 3. **Monitor Resources**: Watch memory and CPU usage for large operations
 
+## Security Considerations
+
+### UCW Security Model
+
+UCW executes system commands and assumes the runtime environment defines its own boundaries. For containment, deploy SMCP inside a container or restricted user namespace. UCW operates entirely within those boundaries — it neither enforces nor bypasses them.
+
+### Security Best Practices
+
+#### Container Deployment
+```bash
+# Run SMCP in Docker container
+docker run -it --rm \
+  -v /path/to/allowed/directory:/workspace \
+  --user 1000:1000 \
+  --memory=512m \
+  --cpus=1.0 \
+  smcp-container
+```
+
+#### Restricted User Account
+```bash
+# Create limited user account
+sudo useradd -r -s /bin/false smcp-user
+sudo chown -R smcp-user:smcp-user /path/to/smcp/plugins/
+```
+
+#### Resource Limits
+```bash
+# Set cgroup limits
+echo "512M" > /sys/fs/cgroup/memory/smcp/memory.limit_in_bytes
+echo "100000" > /sys/fs/cgroup/cpu/smcp/cpu.cfs_quota_us
+```
+
+### Security Philosophy
+
+This approach gives the agent total reach *within that defined sandbox*, while keeping UCW philosophically pure: **maximum capability, user-defined sovereignty**.
+
+- **UCW provides capability** - maximum command access within boundaries
+- **Environment provides security** - containers, users, resource limits
+- **User defines policy** - what commands are allowed, what resources are available
+
 ## Examples Gallery
 
 ### File Operations

@@ -459,6 +459,27 @@ This project is licensed under the GNU Affero General Public License v3.0 (AGPL-
 
 This documentation is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0) - see the [LICENSE-DOCS](LICENSE-DOCS) file for details.
 
+## 🔒 Security Considerations
+
+UCW executes system commands, so consider security implications:
+
+- **Command validation**: UCW doesn't validate command safety
+- **Privilege escalation**: Commands run with current user privileges
+- **Input sanitization**: Validate inputs before passing to UCW
+
+### UCW Security Model
+
+UCW assumes the runtime environment defines its own boundaries. For containment, deploy SMCP inside a container or restricted user namespace. UCW operates entirely within those boundaries — it neither enforces nor bypasses them.
+
+**Recommended Security Practices:**
+
+- **Run SMCP in a Docker container** or lightweight VM
+- **Mount only the directories** or devices you want the agent to see
+- **Use a limited service account** or UID with no sudo privileges
+- **Cap CPU/RAM/network** with container or cgroup limits
+
+This approach gives the agent total reach *within that defined sandbox*, while keeping UCW philosophically pure: **maximum capability, user-defined sovereignty**.
+
 ## 🙏 Acknowledgments
 
 - Inspired by the need for seamless command-line tool integration

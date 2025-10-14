@@ -496,6 +496,47 @@ def benchmark_execution():
     print(f"Average execution time: {avg_time:.3f}s")
 ```
 
+## Security Considerations
+
+### UCW Security Model
+
+UCW executes system commands and assumes the runtime environment defines its own boundaries. For containment, deploy SMCP inside a container or restricted user namespace. UCW operates entirely within those boundaries — it neither enforces nor bypasses them.
+
+### Security Philosophy
+
+This approach gives the agent total reach *within that defined sandbox*, while keeping UCW philosophically pure: **maximum capability, user-defined sovereignty**.
+
+- **UCW provides capability** - maximum command access within boundaries
+- **Environment provides security** - containers, users, resource limits
+- **User defines policy** - what commands are allowed, what resources are available
+
+### Development Security Practices
+
+#### Testing in Containers
+```bash
+# Test UCW in isolated environment
+docker run -it --rm \
+  -v $(pwd):/workspace \
+  --user 1000:1000 \
+  python:3.9-slim \
+  bash -c "cd /workspace && python tests/test_basic.py"
+```
+
+#### Restricted Development Environment
+```bash
+# Create development user with limited privileges
+sudo useradd -m -s /bin/bash ucw-dev
+sudo usermod -aG docker ucw-dev
+sudo chown -R ucw-dev:ucw-dev /path/to/ucw/
+```
+
+#### Resource Monitoring
+```bash
+# Monitor resource usage during development
+python -m cProfile -o profile.stats cli.py wrap ls
+python -c "import pstats; pstats.Stats('profile.stats').sort_stats('cumulative').print_stats(10)"
+```
+
 ## Debugging
 
 ### Debug Tools
