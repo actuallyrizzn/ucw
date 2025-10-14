@@ -1,94 +1,97 @@
-# Universal Command Wrapper (UCW) - Technical Specification
+# Universal Command Wrapper (UCW) — Focused Technical Specification
 
 ## 🧭 **Mission Statement**
 
-The **Universal Command Wrapper (UCW)** is a framework-agnostic library that can **discover**, **analyze**, and **reconstruct** system commands into **structured, callable interfaces**.
+The **Universal Command Wrapper (UCW)** is a Python library and CLI utility that, given a single system command, can **analyze its syntax**, **generate a callable wrapper**, and **optionally write or update a Python CLI file** implementing that wrapper.
 
-It is not a policy engine or security layer — its purpose is simply to *understand* a command's syntax and *reproduce* it programmatically.
+It does *not* scan the entire system or classify commands — it focuses exclusively on turning a *specific known CLI command* into a reproducible Python interface.
 
 ## ⚙️ **Functional Scope**
 
-### 1. **Discovery**
-* Scan `$PATH` to locate available executable commands.
-* Return metadata: `name`, `path`, and basic provenance (system, package, user).
-* No filtering or safety classification — all executables are candidates.
+### 1. **Input Modes**
+
+* **Command Mode:**
+  Supply a CLI command (e.g., `ls`, `grep`, `ipconfig`) → UCW fetches help/man text, parses it, and generates the wrapper.
+* **File Mode:**
+  Provide a path to an existing `cli.py` file → UCW merges or replaces the specified command definition within it.
+
+```bash
+ucw wrap ls --output cli.py
+ucw wrap ipconfig --update ./tools/cli.py
+```
 
 ### 2. **Help Extraction**
-* Retrieve help/man text using platform-specific methods:
+
+* Fetch help/man text using platform-specific strategies:
   * Windows: `command /?`
   * POSIX: `command --help` or `man command`
-* Handle timeouts, missing help, and malformed output gracefully.
+* Handle:
+  * Timeouts (default 10s)
+  * Commands with no help text
+  * Malformed or paginated output (`less` or `more` interception)
 
-### 3. **Parsing & Normalization**
-* Parse help/man text into a **CommandSpec** structure:
-  * Command name and usage line(s)
-  * List of **OptionSpec** entries (flags, arguments, defaults)
-  * Descriptive text and examples (if found)
-* Infer parameter types (`bool`, `string`, `int`, `path`) from heuristics.
+### 3. **Parsing & Schema Generation**
+
+* Extract structured command metadata:
+  * Usage syntax line(s)
+  * Flags and argument options
+  * Examples or descriptive context (if available)
+* Build a `CommandSpec` model with inferred parameter types.
 
 ### 4. **Wrapper Construction**
-* Generate a callable object that mirrors the CLI:
-  * Accepts structured kwargs (`command.run(verbose=True, file="input.txt")`)
-  * Builds the correct argument list automatically
-  * Executes the command via `subprocess.run`
-  * Returns a normalized **ExecutionResult** with `stdout`, `stderr`, `return_code`.
 
-### 5. **Result Normalization**
-* Capture execution data in a portable schema:
-  ```python
-  {
-      "command": "ls -la",
-      "stdout": "...",
-      "stderr": "",
-      "return_code": 0,
-      "elapsed": 0.132
-  }
+* Generate a `CommandWrapper` Python object capable of:
+  * Accepting structured kwargs (`wrapper.run(verbose=True, path="/tmp")`)
+  * Building the equivalent CLI call
+  * Executing it via `subprocess.run`
+  * Returning a normalized `ExecutionResult`
+
+### 5. **Output Handling**
+
+Two operation modes:
+
+| Mode                      | Behavior                                                                    |
+| ------------------------- | --------------------------------------------------------------------------- |
+| **No Output Specified**   | Returns `CommandWrapper` object to memory (library mode).                   |
+| **Output File Specified** | Creates or updates a `cli.py` file that includes the wrapper.               |
+| **Update Mode**           | Replaces an existing wrapper in a CLI file if the same command name exists. |
+
+File operations should:
+* Preserve any unrelated content in the existing file.
+* Insert or replace code blocks bounded by tags, e.g.:
+```python
+  # UCW-BEGIN: ls
+  ... auto-generated code ...
+  # UCW-END: ls
   ```
 
-## 🔧 **Core Architecture**
+### 6. **Execution Normalization**
 
-### **Module Structure**
+All wrapper calls return structured execution data:
+```python
+{
+    "command": "ls -la",
+    "stdout": "...",
+    "stderr": "",
+    "return_code": 0,
+    "elapsed": 0.124
+}
+```
+
+## 🧱 **Simplified Architecture**
+
 ```
 ucw/
 ├── __init__.py
-├── discovery/
-│   ├── windows_discovery.py
-│   ├── linux_discovery.py
-│   └── base_discovery.py
-├── parsing/
-│   ├── windows_parser.py
-│   ├── linux_parser.py
-│   └── base_parser.py
-├── generation/
-│   ├── wrapper_generator.py
-│   └── templates/
-└── utils/
-    ├── helpers.py
-    └── types.py
-```
-
-### **Core Interfaces**
-```python
-class UniversalCommandWrapper:
-    def __init__(self, platform: str = "auto"):
-        self.platform = platform or self._detect_platform()
-    
-    def discover_commands(self) -> List[CommandInfo]:
-        """Discover available commands on the platform."""
-        pass
-    
-    def parse_command(self, command_name: str) -> CommandSpec:
-        """Parse a command's help/man page into structured spec."""
-        pass
-    
-    def build_wrapper(self, spec: CommandSpec) -> CommandWrapper:
-        """Build a callable wrapper from a command spec."""
-        pass
-
-class CommandWrapper:
-    def run(self, **kwargs) -> ExecutionResult:
-        """Execute the command with given arguments."""
-        pass
+├── parser/
+│   ├── windows.py
+│   ├── posix.py
+│   └── base.py
+├── generator/
+│   ├── wrapper_builder.py     # builds callable wrapper object
+│   └── file_writer.py         # handles new or updated CLI output
+├── models.py
+└── cli.py                     # command-line entrypoint
 ```
 
 ## 🧩 **Core Data Models**
@@ -99,16 +102,13 @@ class CommandSpec:
     name: str
     usage: str
     options: list["OptionSpec"]
-    examples: list[str]
 
 @dataclass
 class OptionSpec:
-    name: str
-    aliases: list[str]
-    has_value: bool
-    value_name: str | None
-    type_hint: str | None
+    flag: str
+    takes_value: bool
     description: str | None
+    type_hint: str | None
 
 @dataclass
 class ExecutionResult:
@@ -119,59 +119,53 @@ class ExecutionResult:
     elapsed: float
 ```
 
-## 🧠 **API Shape**
+## 🧩 **Core API**
 
 ```python
 from ucw import UniversalCommandWrapper
 
-ucw = UniversalCommandWrapper(platform="windows")
-spec = ucw.parse_command("dir")
-wrapper = ucw.build_wrapper(spec)
+ucw = UniversalCommandWrapper(platform="auto")
 
-result = wrapper.run(path="C:\\", verbose=True)
-print(result.stdout)
+# Create wrapper in memory
+spec = ucw.parse_command("ls")
+wrapper = ucw.build_wrapper(spec)
+result = wrapper.run(l=True, a=True)
+
+# Generate or update a CLI file
+ucw.write_wrapper("ls", output="cli.py", update=True)
 ```
 
-## 🚫 **Explicitly Out of Scope**
+## 🚫 **Out of Scope**
 
-* Command "safety" or privilege analysis
-* LLM involvement in parsing
-* Plugin registration (SMCP, Letta, or others)
-* Concurrency, caching, or sandboxing
-* Command chaining or pipelines
+* System-wide scanning or indexing of commands.
+* LLM or semantic inference of arguments.
+* Safety, sandboxing, or policy layers.
+* Multi-command chaining or pipelines.
 
 ## ✅ **Success Criteria**
 
-* Correctly parses ≥75% of tested built-in commands (`ls`, `cat`, `grep`, `date`, `whoami`, `dir`, `findstr`, `ipconfig`, etc.).
-* Auto-generates runnable wrappers that produce equivalent CLI results.
-* Executes with consistent output schema on Windows and Linux.
-* Zero dependency beyond Python stdlib.
+* Works on both Windows and Linux.
+* Correctly parses and wraps ≥80% of tested commands.
+* Can generate a new CLI file or update an existing one without corrupting it.
+* Maintains zero external dependencies.
+* End-to-end runtime for typical command generation: under 5 seconds.
 
 ## 🎯 **Implementation Phases**
 
-### **Phase 1: Foundation (Weeks 1-2)**
-- [ ] Command discovery engine for Windows and Linux
-- [ ] Basic help parsing for Windows `/?` and Linux `--help`/`man`
-- [ ] Core data models (`CommandSpec`, `OptionSpec`, `ExecutionResult`)
-- [ ] Basic wrapper construction and execution
+### **Phase 1: Core Functionality**
+* Command parsing and wrapper construction (in-memory)
+* Simple file output (new CLI file creation)
+* `ucw wrap <command>` CLI entrypoint
 
-### **Phase 2: Enhancement (Weeks 3-4)**
-- [ ] Advanced help parsing with type inference
-- [ ] Improved option detection and aliasing
-- [ ] Cross-platform testing and validation
-- [ ] Error handling and edge case management
+### **Phase 2: File Integration**
+* Intelligent `--update` mode with section tagging
+* Preservation of existing CLI content
+* CLI diff and confirmation prompt
 
-### **Phase 3: Optimization (Weeks 5-6)**
-- [ ] Performance optimization for discovery and parsing
-- [ ] Enhanced type inference heuristics
-- [ ] Comprehensive test suite with built-in commands
-- [ ] Documentation and examples
-
-### **Phase 4: Polish (Weeks 7-8)**
-- [ ] Final testing across Windows and Linux
-- [ ] Package distribution and installation
-- [ ] Performance benchmarking
-- [ ] Community feedback integration
+### **Phase 3: Type Refinement & Cross-Platform**
+* Argument type inference improvements
+* Windows `/` vs POSIX `-` handling
+* Extended testing matrix
 
 ## 🔍 **Key Technical Challenges**
 
@@ -189,10 +183,11 @@ print(result.stdout)
 
 ## 🚀 **Ready for Development**
 
-This specification defines UCW as a **cross-platform CLI interface synthesizer** — a tool that observes a system's command language and can reconstruct any of its verbs as Python-callable objects.
+This specification defines UCW as a **single-command wrapper compiler** — a developer tool that can be dropped into any environment to turn arbitrary system commands into working Python interfaces or extend an existing CLI incrementally.
 
 **Key Success Factors:**
-- Focus on core functionality: discover → parse → wrap → execute
+- Focus on single-command analysis and wrapper generation
+- Dual-mode operation: library (in-memory) and builder (file output)
 - Start with common built-in commands for validation
 - Build incrementally with clear phase boundaries
 - Maintain zero external dependencies beyond Python stdlib
