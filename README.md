@@ -85,7 +85,7 @@ python cli.py wrap ls
 python cli.py wrap ls
 
 # Generate wrapper and save to file (JSON output)
-python cli.py wrap ls --output my_ls.py
+python cli.py wrap ls --output cli.py
 
 # Parse command specification (JSON output)
 python cli.py parse ls
@@ -105,6 +105,12 @@ python cli.py --standalone parse ls
 
 # Execute command (human-readable output)
 python cli.py --standalone execute ls --args "/root" --options '{"--all": true}'
+
+# Generate CLI file (human-readable output)
+python cli.py --standalone wrap tar --output cli.py
+
+# Update existing CLI file (human-readable output)
+python cli.py --standalone wrap find --update cli.py
 ```
 
 ### Library Usage
@@ -147,11 +153,11 @@ ucw wrap <command> [options]
 ucw wrap cp
 # Output: Shows positional args and available options
 
-# Generate CLI file
-ucw wrap tar --output archive_tool.py
+# Generate CLI file (creates new cli.py)
+python cli.py wrap tar --output cli.py
 
-# Update existing file
-ucw wrap find --update existing_cli.py
+# Update existing CLI file (modifies existing cli.py)
+python cli.py wrap find --update cli.py
 ```
 
 ### Library Interface

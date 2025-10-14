@@ -132,7 +132,8 @@ Available options:
 #### Generate CLI File
 
 ```bash
-ucw wrap tar --output archive_tool.py
+# Create new CLI file
+python cli.py wrap tar --output cli.py
 ```
 
 This creates a complete Python CLI file that can be executed independently.
@@ -140,7 +141,8 @@ This creates a complete Python CLI file that can be executed independently.
 #### Update Existing File
 
 ```bash
-ucw wrap find --update existing_cli.py
+# Update existing CLI file
+python cli.py wrap find --update cli.py
 ```
 
 This adds or updates the find command wrapper in an existing CLI file.
