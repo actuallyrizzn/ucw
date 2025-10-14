@@ -2,9 +2,13 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyo
+*.pyd
 
 # C extensions
 *.so
+*.dylib
+*.dll
 
 # Distribution / packaging (not applicable for SMCP plugin)
 # .Python
@@ -127,6 +131,10 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.env.local
+.env.development
+.env.test
+.env.production
 
 # Spyder project settings
 .spyderproject
@@ -165,9 +173,31 @@ cython_debug/
 # VS Code
 .vscode/
 
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+log/
+
 # UCW specific
 test_cli.py
 test_*.py
 *_test.py
 tmp/
 temp/
+*.profile
+*.stats
