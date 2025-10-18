@@ -195,8 +195,10 @@ log/
 
 # UCW specific
 test_cli.py
-test_*.py
-*_test.py
+# Do not ignore pytest tests; developers rely on in-repo tests
+# Previously these patterns caused tests not to be tracked
+#!test_*.py
+#!*_test.py
 tmp/
 temp/
 *.profile
