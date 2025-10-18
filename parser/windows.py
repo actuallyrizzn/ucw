@@ -6,6 +6,7 @@ and extracting command specifications.
 """
 
 import re
+import subprocess
 from typing import List, Optional
 
 from .base import BaseParser
