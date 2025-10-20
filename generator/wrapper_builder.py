@@ -150,17 +150,54 @@ if __name__ == "__main__":
             timeout_exec=self.timeout_exec
         )
     
+    def _normalize_dest_name(self, flag: str) -> str:
+        """Normalize flag to valid Python attribute name."""
+        # Remove leading dashes and slashes
+        dest = flag.lstrip('-/')
+        
+        # Handle empty case
+        if not dest:
+            dest = 'empty'
+        
+        # Replace remaining dashes with underscores
+        dest = dest.replace('-', '_')
+        
+        # Handle special characters
+        if dest == '?':
+            dest = 'question'
+        elif dest.startswith('?'):
+            dest = 'question_' + dest[1:]
+        
+        # Ensure it's a valid Python identifier
+        if not dest.isidentifier():
+            # Replace invalid characters with underscores
+            import re
+            dest = re.sub(r'[^a-zA-Z0-9_]', '_', dest)
+            # Ensure it doesn't start with a number
+            if dest and dest[0].isdigit():
+                dest = '_' + dest
+        
+        return dest
+    
     def _generate_argument_definitions(self, spec: CommandSpec) -> str:
         """Generate argparse argument definitions."""
         lines = []
         
+        # Reserved argparse options that conflict with built-in options
+        reserved_options = {'--help', '-h', '--version', '-v'}
+        
         for option in spec.options:
+            # Skip reserved options to avoid conflicts
+            if option.flag in reserved_options:
+                continue
+                
+            dest = self._normalize_dest_name(option.flag)
             if option.is_boolean:
                 # Boolean flag
-                lines.append(f'    parser.add_argument("{option.flag}", action="store_true", help="{option.description or ""}")')
+                lines.append(f'    parser.add_argument("{option.flag}", action="store_true", dest="{dest}", help="{option.description or ""}")')
             else:
                 # Value flag
-                lines.append(f'    parser.add_argument("{option.flag}", help="{option.description or ""}")')
+                lines.append(f'    parser.add_argument("{option.flag}", dest="{dest}", help="{option.description or ""}")')
         
         return '\n'.join(lines) if lines else '    pass'
     
@@ -168,12 +205,20 @@ if __name__ == "__main__":
         """Generate argument handling code."""
         lines = []
         
+        # Reserved argparse options that conflict with built-in options
+        reserved_options = {'--help', '-h', '--version', '-v'}
+        
         for option in spec.options:
+            # Skip reserved options to avoid conflicts
+            if option.flag in reserved_options:
+                continue
+                
+            dest = self._normalize_dest_name(option.flag)
             if option.is_boolean:
-                lines.append(f'        if args.{option.flag.replace("-", "_").replace("/", "_")}:')
+                lines.append(f'        if args.{dest}:')
                 lines.append(f'            cmd_args.append("{option.flag}")')
             else:
-                lines.append(f'        if hasattr(args, "{option.flag.replace("-", "_").replace("/", "_")}") and args.{option.flag.replace("-", "_").replace("/", "_")} is not None:')
-                lines.append(f'            cmd_args.extend(["{option.flag}", str(args.{option.flag.replace("-", "_").replace("/", "_")})])')
+                lines.append(f'        if hasattr(args, "{dest}") and args.{dest} is not None:')
+                lines.append(f'            cmd_args.extend(["{option.flag}", str(args.{dest})])')
         
         return '\n'.join(lines) if lines else '        pass'
