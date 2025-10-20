@@ -56,6 +56,15 @@ class FileWriter:
         with open(output_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
+        # Check if this is a fresh file (no UCW markers)
+        if "# UCW-BEGIN:" not in content and "# UCW-END:" not in content:
+            # This is a fresh file, replace it entirely with the new command
+            plugin_code = self.wrapper_builder.generate_mcp_plugin_code(spec)
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(plugin_code)
+            return output_path
+        
+        # This is an existing UCW-managed file, update the command section
         # Generate new wrapper code
         plugin_code = self.wrapper_builder.generate_mcp_plugin_code(spec)
         
@@ -72,16 +81,37 @@ class FileWriter:
         return output_path
     
     def _extract_wrapper_code(self, plugin_code: str, command_name: str) -> str:
-        """Extract the wrapper-specific code from plugin code."""
-        # For now, return the full plugin code
-        # In a more sophisticated implementation, we'd extract just the command-specific parts
-        return plugin_code
+        """Extract the command-specific code from plugin code."""
+        # Extract only the command-specific functions, not the full plugin structure
+        lines = plugin_code.split('\n')
+        command_lines = []
+        in_command_section = False
+        
+        for line in lines:
+            # Look for command-specific functions
+            if (line.strip().startswith(f'def setup_execute_command') or
+                line.strip().startswith(f'def execute_command')):
+                in_command_section = True
+            
+            if in_command_section:
+                command_lines.append(line)
+                
+                # Stop at the end of the execute_command function (before if __name__)
+                if line.strip().startswith('if __name__'):
+                    break
+        
+        return '\n'.join(command_lines)
     
     def _update_wrapper_section(self, content: str, command_name: str, 
                                new_code: str) -> str:
         """Update or add a wrapper section in existing content."""
         begin_tag = f"# UCW-BEGIN: {command_name}"
         end_tag = f"# UCW-END: {command_name}"
+        
+        # Check if this is a new file (no UCW markers at all)
+        if "# UCW-BEGIN:" not in content and "# UCW-END:" not in content:
+            # This is a fresh file, wrap the entire content in UCW markers
+            return f"{begin_tag}\n{content}\n{end_tag}\n"
         
         # Check if section already exists
         if begin_tag in content and end_tag in content:
