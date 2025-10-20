@@ -16,8 +16,8 @@ from models import CommandSpec, OptionSpec, PositionalArgSpec
 class BaseParser(ABC):
     """Abstract base class for command parsers."""
     
-    def __init__(self):
-        self.timeout = 10  # Default timeout for help commands
+    def __init__(self, timeout: int = 10):
+        self.timeout = timeout  # Configurable timeout for help commands
     
     def parse_command(self, command_name: str) -> CommandSpec:
         """

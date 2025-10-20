@@ -8,6 +8,7 @@ callable wrappers or MCP plugin files.
 import platform
 import subprocess
 import time
+import os
 from typing import Optional, Union
 
 from models import CommandSpec, ExecutionResult
@@ -22,20 +23,29 @@ from wrapper import CommandWrapper
 class UniversalCommandWrapper:
     """Main UCW class for command analysis and wrapper generation."""
     
-    def __init__(self, platform_name: Optional[str] = None):
+    def __init__(self, platform_name: Optional[str] = None, 
+                 timeout_help: Optional[int] = None,
+                 timeout_exec: Optional[int] = None):
         """
-        Initialize UCW with platform detection.
+        Initialize UCW with platform detection and timeout configuration.
         
         Args:
             platform_name: Platform to use ("windows", "posix", "linux", "auto")
                           Note: "linux" is an alias for "posix"
+            timeout_help: Timeout for help commands in seconds (default: 10)
+            timeout_exec: Timeout for command execution in seconds (default: 30)
         """
         self.platform = platform_name or self._detect_platform()
         # Normalize platform name - accept "linux" as alias for "posix"
         if self.platform == "linux":
             self.platform = "posix"
+        
+        # Configure timeouts with environment variable support
+        self.timeout_help = timeout_help or int(os.environ.get('UCW_TIMEOUT_HELP', '10'))
+        self.timeout_exec = timeout_exec or int(os.environ.get('UCW_TIMEOUT_EXEC', '30'))
+        
         self.parser = self._create_parser()
-        self.wrapper_builder = WrapperBuilder()
+        self.wrapper_builder = WrapperBuilder(timeout_exec=self.timeout_exec)
         self.file_writer = FileWriter()
     
     def _detect_platform(self) -> str:
@@ -51,9 +61,9 @@ class UniversalCommandWrapper:
     def _create_parser(self) -> BaseParser:
         """Create the appropriate parser for the platform."""
         if self.platform == "windows":
-            return WindowsParser()
+            return WindowsParser(timeout=self.timeout_help)
         elif self.platform == "posix":
-            return PosixParser()
+            return PosixParser(timeout=self.timeout_help)
         else:
             raise ValueError(f"Unknown platform: {self.platform}")
     

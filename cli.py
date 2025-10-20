@@ -167,6 +167,10 @@ def setup_wrap_command(subparsers):
                        help="Update existing file")
     parser.add_argument("--platform", choices=["windows", "posix", "linux", "auto"],
                        default="auto", help="Target platform")
+    parser.add_argument("--timeout-help", type=int, default=10,
+                       help="Timeout for help commands in seconds (default: 10)")
+    parser.add_argument("--timeout-exec", type=int, default=30,
+                       help="Timeout for command execution in seconds (default: 30)")
 
 
 def setup_parse_command(subparsers):
@@ -175,6 +179,10 @@ def setup_parse_command(subparsers):
     parser.add_argument("command_name", help="Name of the command to parse")
     parser.add_argument("--platform", choices=["windows", "posix", "linux", "auto"],
                        default="auto", help="Target platform")
+    parser.add_argument("--timeout-help", type=int, default=10,
+                       help="Timeout for help commands in seconds (default: 10)")
+    parser.add_argument("--timeout-exec", type=int, default=30,
+                       help="Timeout for command execution in seconds (default: 30)")
 
 
 def setup_execute_command(subparsers):
@@ -185,6 +193,10 @@ def setup_execute_command(subparsers):
     parser.add_argument("--options", help="JSON string of options")
     parser.add_argument("--platform", choices=["windows", "posix", "linux", "auto"],
                        default="auto", help="Target platform")
+    parser.add_argument("--timeout-help", type=int, default=10,
+                       help="Timeout for help commands in seconds (default: 10)")
+    parser.add_argument("--timeout-exec", type=int, default=30,
+                       help="Timeout for command execution in seconds (default: 30)")
 
 
 def execute_wrap_command(args) -> Dict[str, Any]:
@@ -192,7 +204,11 @@ def execute_wrap_command(args) -> Dict[str, Any]:
     try:
         # Initialize UCW
         platform_name = args.platform if args.platform != "auto" else None
-        ucw = UniversalCommandWrapper(platform_name=platform_name)
+        ucw = UniversalCommandWrapper(
+            platform_name=platform_name,
+            timeout_help=args.timeout_help,
+            timeout_exec=args.timeout_exec
+        )
         
         if args.output:
             # Generate file
@@ -261,7 +277,11 @@ def execute_parse_command(args) -> Dict[str, Any]:
     try:
         # Initialize UCW
         platform_name = args.platform if args.platform != "auto" else None
-        ucw = UniversalCommandWrapper(platform_name=platform_name)
+        ucw = UniversalCommandWrapper(
+            platform_name=platform_name,
+            timeout_help=args.timeout_help,
+            timeout_exec=args.timeout_exec
+        )
         
         # Parse command
         spec = ucw.parse_command(args.command_name)
@@ -303,7 +323,11 @@ def execute_execute_command(args) -> Dict[str, Any]:
     try:
         # Initialize UCW
         platform_name = args.platform if args.platform != "auto" else None
-        ucw = UniversalCommandWrapper(platform_name=platform_name)
+        ucw = UniversalCommandWrapper(
+            platform_name=platform_name,
+            timeout_help=args.timeout_help,
+            timeout_exec=args.timeout_exec
+        )
         
         # Parse command and build wrapper
         spec = ucw.parse_command(args.command_name)

@@ -14,6 +14,9 @@ from wrapper import CommandWrapper
 class WrapperBuilder:
     """Builder for CommandWrapper objects."""
     
+    def __init__(self, timeout_exec: int = 30):
+        self.timeout_exec = timeout_exec
+    
     def build_wrapper(self, spec: CommandSpec) -> CommandWrapper:
         """
         Build a CommandWrapper from a CommandSpec.
@@ -24,7 +27,7 @@ class WrapperBuilder:
         Returns:
             CommandWrapper object
         """
-        return CommandWrapper(spec.name, spec)
+        return CommandWrapper(spec.name, spec, timeout=self.timeout_exec)
     
     def generate_mcp_plugin_code(self, spec: CommandSpec) -> str:
         """
@@ -105,7 +108,7 @@ def execute_command(args) -> Dict[str, Any]:
             cmd_args,
             capture_output=True,
             text=True,
-            timeout=30
+            timeout={timeout_exec}
         )
         elapsed = time.time() - start_time
         
@@ -121,7 +124,7 @@ def execute_command(args) -> Dict[str, Any]:
     except subprocess.TimeoutExpired:
         return {{
             "status": "error",
-            "error": "Command timed out after 30 seconds"
+            "error": "Command timed out after {timeout_exec} seconds"
         }}
     except Exception as e:
         return {{
@@ -143,7 +146,8 @@ if __name__ == "__main__":
         return template.format(
             command_name=spec.name,
             argument_definitions=argument_definitions,
-            argument_handling=argument_handling
+            argument_handling=argument_handling,
+            timeout_exec=self.timeout_exec
         )
     
     def _generate_argument_definitions(self, spec: CommandSpec) -> str:

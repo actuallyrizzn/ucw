@@ -16,6 +16,9 @@ from models import CommandSpec, OptionSpec, PositionalArgSpec
 class WindowsParser(BaseParser):
     """Parser for Windows command help text."""
     
+    def __init__(self, timeout: int = 10):
+        super().__init__(timeout)
+    
     def _get_help_command(self, command_name: str) -> List[str]:
         """Get Windows help command."""
         return [command_name, '/?']

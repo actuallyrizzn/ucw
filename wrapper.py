@@ -15,9 +15,10 @@ from models import CommandSpec, ExecutionResult
 class CommandWrapper:
     """Callable wrapper for a system command."""
     
-    def __init__(self, command_name: str, spec: CommandSpec):
+    def __init__(self, command_name: str, spec: CommandSpec, timeout: int = 30):
         self.command_name = command_name
         self.spec = spec
+        self.timeout = timeout
     
     def run(self, *args, **kwargs) -> ExecutionResult:
         """
@@ -61,7 +62,7 @@ class CommandWrapper:
                 cmd_args,
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=self.timeout
             )
             elapsed = time.time() - start_time
             
@@ -77,7 +78,7 @@ class CommandWrapper:
             return ExecutionResult(
                 command=" ".join(cmd_args),
                 stdout="",
-                stderr="Command timed out after 30 seconds",
+                stderr=f"Command timed out after {self.timeout} seconds",
                 return_code=-1,
                 elapsed=elapsed
             )
