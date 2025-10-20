@@ -27,9 +27,13 @@ class UniversalCommandWrapper:
         Initialize UCW with platform detection.
         
         Args:
-            platform_name: Platform to use ("windows", "linux", "auto")
+            platform_name: Platform to use ("windows", "posix", "linux", "auto")
+                          Note: "linux" is an alias for "posix"
         """
         self.platform = platform_name or self._detect_platform()
+        # Normalize platform name - accept "linux" as alias for "posix"
+        if self.platform == "linux":
+            self.platform = "posix"
         self.parser = self._create_parser()
         self.wrapper_builder = WrapperBuilder()
         self.file_writer = FileWriter()

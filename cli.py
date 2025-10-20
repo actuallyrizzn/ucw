@@ -165,7 +165,7 @@ def setup_wrap_command(subparsers):
     parser.add_argument("--output", "-o", help="Output file path")
     parser.add_argument("--update", "-u", action="store_true", 
                        help="Update existing file")
-    parser.add_argument("--platform", choices=["windows", "posix", "auto"],
+    parser.add_argument("--platform", choices=["windows", "posix", "linux", "auto"],
                        default="auto", help="Target platform")
 
 
@@ -173,7 +173,7 @@ def setup_parse_command(subparsers):
     """Setup the parse command."""
     parser = subparsers.add_parser("parse", help="Parse a command's help text")
     parser.add_argument("command_name", help="Name of the command to parse")
-    parser.add_argument("--platform", choices=["windows", "posix", "auto"],
+    parser.add_argument("--platform", choices=["windows", "posix", "linux", "auto"],
                        default="auto", help="Target platform")
 
 
@@ -183,7 +183,7 @@ def setup_execute_command(subparsers):
     parser.add_argument("command_name", help="Name of the command to execute")
     parser.add_argument("--args", nargs="*", help="Positional arguments")
     parser.add_argument("--options", help="JSON string of options")
-    parser.add_argument("--platform", choices=["windows", "posix", "auto"],
+    parser.add_argument("--platform", choices=["windows", "posix", "linux", "auto"],
                        default="auto", help="Target platform")
 
 
