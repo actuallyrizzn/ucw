@@ -44,5 +44,5 @@ tmp/
 *.log
 
 # Test outputs
-test_*.py
-*_test.py
+# test_*.py
+# *_test.py
