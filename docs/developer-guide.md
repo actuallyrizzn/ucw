@@ -12,6 +12,7 @@ This guide is for developers who want to contribute to UCW, extend its functiona
 - [Contributing](#contributing)
 - [Performance Considerations](#performance-considerations)
 - [Debugging](#debugging)
+- [Appendices](#appendices)
 
 ## Architecture Overview
 
@@ -623,3 +624,28 @@ def debug_wrapper_execution(wrapper):
 ```
 
 This developer guide provides comprehensive information for contributing to UCW. For specific implementation details, refer to the source code and API documentation.
+
+## Appendices
+
+### A. Plugin Development Guide
+
+For detailed information on developing plugins for UCW and MCP integration, see the comprehensive [Plugin Development Guide](planning/plugin-development-guide.md). This guide covers:
+
+- Plugin architecture and directory structure
+- Creating your first plugin
+- Advanced plugin development techniques
+- Testing and deployment strategies
+- Integration with MCP servers
+- Best practices and troubleshooting
+
+### B. Project Vision and Goals
+
+The original project vision and goals are documented in the [Project Idea](planning/project-idea.md). This document outlines:
+
+- The core concept and motivation behind UCW
+- Target use cases and applications
+- Design principles and architectural decisions
+- Future roadmap and expansion plans
+- Community and ecosystem considerations
+
+These documents provide additional context for developers who want to understand the broader vision and contribute to UCW's plugin ecosystem.

@@ -11,6 +11,7 @@ This document provides comprehensive API reference for the Universal Command Wra
 - [CLI Interface](#cli-interface)
 - [Error Handling](#error-handling)
 - [Type Hints](#type-hints)
+- [Appendices](#appendices)
 
 ## Core Classes
 
@@ -499,3 +500,28 @@ mypy ucw/
 - CommandSpecs are lightweight
 - Help text is not stored after parsing
 - Wrappers have minimal memory footprint
+
+## Appendices
+
+### A. Plugin Development Guide
+
+For detailed information on developing plugins for UCW and MCP integration, see the comprehensive [Plugin Development Guide](planning/plugin-development-guide.md). This guide covers:
+
+- Plugin architecture and directory structure
+- Creating your first plugin
+- Advanced plugin development techniques
+- Testing and deployment strategies
+- Integration with MCP servers
+- Best practices and troubleshooting
+
+### B. Project Vision and Goals
+
+The original project vision and goals are documented in the [Project Idea](planning/project-idea.md). This document outlines:
+
+- The core concept and motivation behind UCW
+- Target use cases and applications
+- Design principles and architectural decisions
+- Future roadmap and expansion plans
+- Community and ecosystem considerations
+
+These documents provide additional context for developers who want to understand the broader vision and contribute to UCW's plugin ecosystem.

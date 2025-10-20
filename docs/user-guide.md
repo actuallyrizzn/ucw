@@ -12,6 +12,7 @@ This comprehensive guide will help you get started with the Universal Command Wr
 - [Troubleshooting](#troubleshooting)
 - [Best Practices](#best-practices)
 - [Examples Gallery](#examples-gallery)
+- [Appendices](#appendices)
 
 ## Getting Started
 
@@ -640,3 +641,28 @@ result = kill_wrapper.run(signal="TERM", "1234")  # PID as positional arg
 ```
 
 This user guide provides comprehensive coverage of UCW's features and capabilities. For more specific examples or advanced use cases, refer to the API documentation or explore the test suite.
+
+## Appendices
+
+### A. Plugin Development Guide
+
+For detailed information on developing plugins for UCW and MCP integration, see the comprehensive [Plugin Development Guide](planning/plugin-development-guide.md). This guide covers:
+
+- Plugin architecture and directory structure
+- Creating your first plugin
+- Advanced plugin development techniques
+- Testing and deployment strategies
+- Integration with MCP servers
+- Best practices and troubleshooting
+
+### B. Project Vision and Goals
+
+The original project vision and goals are documented in the [Project Idea](planning/project-idea.md). This document outlines:
+
+- The core concept and motivation behind UCW
+- Target use cases and applications
+- Design principles and architectural decisions
+- Future roadmap and expansion plans
+- Community and ecosystem considerations
+
+These documents provide additional context for users who want to understand the broader vision and contribute to UCW's plugin ecosystem.
