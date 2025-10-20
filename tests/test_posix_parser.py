@@ -184,13 +184,12 @@ DESCRIPTION
        -l     use a long listing format
 """
         
-        with patch.object(parser, '_get_help_text', return_value=""):
-            with patch.object(parser, '_try_alternative_help', return_value=mock_man_text):
-                spec = parser.parse_command("ls")
-                
-                assert spec.name == "ls"
-                assert spec.description == "list directory contents"
-                assert len(spec.options) >= 2
+        with patch.object(parser, '_get_help_text', side_effect=lambda x: mock_man_text):
+            spec = parser.parse_command("ls")
+            
+            assert spec.name == "ls"
+            assert spec.description == "list directory contents"
+            assert len(spec.options) >= 2
     
     def test_parse_command_no_help_available(self):
         """Test parse_command when no help is available."""

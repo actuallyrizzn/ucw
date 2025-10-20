@@ -113,7 +113,7 @@ class PosixParser(BaseParser):
                     description = ""
                 
                 # Determine if it takes a value
-                takes_value = '=' in primary_flag or any(word in description.upper() for word in ['ARG', 'SIZE', 'WORD', 'COLS', 'PATTERN', 'WHEN'])
+                takes_value = '=' in line or any(word in description.upper() for word in ['ARG', 'SIZE', 'WORD', 'COLS', 'PATTERN', 'WHEN'])
                 
                 # Infer type hint
                 type_hint = self._infer_type_hint(description)

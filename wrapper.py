@@ -109,6 +109,12 @@ class CommandWrapper:
                 # but we'll let the command handle it
                 pass
         
+        # If there are more args than defined positional args, add them anyway
+        # This handles cases where the command spec doesn't define all possible args
+        if len(args) > len(self.spec.positional_args):
+            for i in range(len(self.spec.positional_args), len(args)):
+                cmd_args.append(str(args[i]))
+        
         # Execute command
         start_time = time.time()
         try:

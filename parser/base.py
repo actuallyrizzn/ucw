@@ -31,10 +31,18 @@ class BaseParser(ABC):
         """
         if command_name is None:
             raise TypeError("Command name cannot be None")
-        if not command_name:
-            raise ValueError("Command name cannot be empty")
         if not isinstance(command_name, str):
             raise TypeError("Command name must be a string")
+        if not command_name:
+            # Return empty spec for empty command name
+            return CommandSpec(
+                name="",
+                usage="",
+                options=[],
+                positional_args=[],
+                description="",
+                examples=[]
+            )
         
         help_text = self._get_help_text(command_name)
         return self._parse_help_text(command_name, help_text)
@@ -58,7 +66,7 @@ class BaseParser(ABC):
                 timeout=self.timeout
             )
             
-            if result.returncode == 0:
+            if result.returncode == 0 and result.stdout.strip():
                 return result.stdout
             else:
                 # Try alternative help methods
