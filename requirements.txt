@@ -1,13 +1,23 @@
-# Universal Command Wrapper (UCW) - Requirements
+# Universal Command Wrapper (UCW) - Production Requirements
 # 
 # UCW is designed to have zero external dependencies beyond Python stdlib.
-# This file is included for future extensibility and development tools.
+# This file is included for future extensibility and optional features.
+#
+# Core UCW functionality requires only Python 3.7+ standard library:
+# - subprocess (for command execution)
+# - argparse (for CLI interface)
+# - json (for output formatting)
+# - os, sys, platform (for system operations)
+# - pathlib (for file operations)
+# - typing (for type hints)
+# - abc (for abstract base classes)
+# - re (for text parsing)
+# - time (for execution timing)
+#
+# No external dependencies are required for basic UCW functionality.
 
-# Development dependencies (optional)
-pytest>=7.0.0
-black>=22.0.0
-flake8>=5.0.0
-
-# Future dependencies (if needed)
+# Future optional dependencies (commented out until needed)
 # requests>=2.28.0  # For HTTP-based help fetching
 # click>=8.0.0      # For enhanced CLI interface
+# rich>=12.0.0      # For enhanced terminal output
+# typer>=0.9.0      # For modern CLI interface

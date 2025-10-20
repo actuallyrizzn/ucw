@@ -24,6 +24,7 @@ A powerful command wrapper generator that can be used standalone or as an SMCP p
 ## 📋 Table of Contents
 
 - [Installation](#installation)
+- [Installation Guide](INSTALL.md) - Detailed installation instructions
 - [Quick Start](#quick-start)
 - [Usage](#usage)
   - [CLI Interface](#cli-interface)
@@ -65,11 +66,14 @@ For development, testing, or standalone usage:
 git clone https://github.com/actuallyrizzn/ucw.git
 cd ucw
 
-# Install development dependencies (optional)
+# Install production dependencies (zero external dependencies)
 pip install -r requirements.txt
 
+# Install testing dependencies (for development/testing)
+pip install -r requirements-testing.txt
+
 # Run tests
-python tests/test_basic.py
+python -m pytest tests/
 
 # Use CLI directly
 python cli.py wrap ls
@@ -402,7 +406,8 @@ ucw/
 ├── docs/                    # Documentation
 │   ├── plugin-development-guide.md
 │   └── project-idea.md
-├── requirements.txt         # Development dependencies
+├── requirements.txt         # Production dependencies (zero external deps)
+├── requirements-testing.txt # Testing and development dependencies
 └── README.md               # This file
 ```
 
@@ -440,11 +445,14 @@ cd ucw
 # Install in development mode
 pip install -e .
 
-# Install development dependencies
+# Install production dependencies (zero external dependencies)
 pip install -r requirements.txt
 
+# Install testing dependencies (for development/testing)
+pip install -r requirements-testing.txt
+
 # Run tests
-python tests/test_basic.py
+python -m pytest tests/
 ```
 
 ### Adding New Features

@@ -1,0 +1,26 @@
+# Universal Command Wrapper (UCW) - Testing Requirements
+#
+# This file contains all dependencies needed for testing and development.
+# Install with: pip install -r requirements-testing.txt
+#
+# For production use only, install with: pip install -r requirements.txt
+# (which has zero external dependencies)
+
+# Testing framework and plugins
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+pytest-timeout>=2.1.0
+
+# Code quality and formatting tools
+black>=22.0.0
+flake8>=5.0.0
+isort>=5.10.0
+mypy>=1.0.0
+
+# Additional testing utilities
+coverage>=7.0.0
+tox>=4.0.0
+
+# Development tools
+pre-commit>=2.20.0
