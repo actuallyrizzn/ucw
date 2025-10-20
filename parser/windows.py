@@ -31,9 +31,11 @@ class WindowsParser(BaseParser):
                 [command_name, '/help'],
                 capture_output=True,
                 text=True,
+                shell=True,  # Windows commands need shell=True
                 timeout=self.timeout
             )
-            if result.returncode == 0:
+            # Accept help text if it contains meaningful content, even with non-zero return codes
+            if result.stdout.strip() and len(result.stdout.strip()) > 20:
                 return result.stdout
         except:
             pass
@@ -60,31 +62,57 @@ class WindowsParser(BaseParser):
     def _is_option_line(self, line: str) -> bool:
         """Check if a line contains a Windows option definition."""
         # Windows options typically start with / or -
-        return bool(re.match(r'^\s*[/-][a-zA-Z]', line))
+        # Also handle complex formats like /A[[:]attributes]
+        return bool(re.match(r'^\s*[/-][a-zA-Z]', line) or re.match(r'^\s*[/-][a-zA-Z]\[', line))
     
     def _parse_option_line(self, line: str) -> Optional[OptionSpec]:
-        """Parse a Windows option line."""
-        # Pattern: /option    Description text
-        # Pattern: /option:value    Description text
-        match = re.match(r'^\s*([/-])([a-zA-Z][a-zA-Z0-9]*)(?::([a-zA-Z]+))?\s+(.+)', line)
-        if not match:
-            return None
+        """Parse a Windows option line with enhanced patterns for complex formats."""
+        # Enhanced patterns to handle complex Windows option formats:
+        # /option    Description text
+        # /option:value    Description text  
+        # /option[[:]attributes]    Description text (complex format)
+        # /option[[:]sortorder]    Description text (complex format)
         
-        prefix, flag_name, value_type, description = match.groups()
-        flag = f"{prefix}{flag_name}"
+        # Try complex pattern first (e.g., /A[[:]attributes])
+        # Handle both /A[[:]attributes] and /A    Description formats
+        complex_match = re.match(r'^\s*([/-])([a-zA-Z][a-zA-Z0-9]*)\[.*?\]\s+(.+)', line)
+        if complex_match:
+            prefix, flag_name, description = complex_match.groups()
+            flag = f"{prefix}{flag_name}"
+            
+            # Determine if it takes a value based on content
+            takes_value = ':' in line or 'value' in description.lower() or 'specify' in description.lower()
+            
+            # Infer type hint
+            type_hint = self._infer_type_hint(description)
+            
+            return OptionSpec(
+                flag=flag,
+                takes_value=takes_value,
+                description=description.strip(),
+                type_hint=type_hint
+            )
         
-        # Determine if it takes a value
-        takes_value = value_type is not None or ':' in line
+        # Fall back to simple pattern
+        simple_match = re.match(r'^\s*([/-])([a-zA-Z][a-zA-Z0-9]*)(?::([a-zA-Z]+))?\s+(.+)', line)
+        if simple_match:
+            prefix, flag_name, value_type, description = simple_match.groups()
+            flag = f"{prefix}{flag_name}"
+            
+            # Determine if it takes a value
+            takes_value = value_type is not None or ':' in line
+            
+            # Infer type hint
+            type_hint = self._infer_type_hint(description)
+            
+            return OptionSpec(
+                flag=flag,
+                takes_value=takes_value,
+                description=description.strip(),
+                type_hint=type_hint
+            )
         
-        # Infer type hint
-        type_hint = self._infer_type_hint(description)
-        
-        return OptionSpec(
-            flag=flag,
-            takes_value=takes_value,
-            description=description.strip(),
-            type_hint=type_hint
-        )
+        return None
     
     def _extract_description(self, help_text: str) -> str:
         """Extract command description from help text."""

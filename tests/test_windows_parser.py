@@ -49,6 +49,7 @@ class TestWindowsParser:
                 ["testcmd", "/help"],
                 capture_output=True,
                 text=True,
+                shell=True,
                 timeout=parser.timeout
             )
             

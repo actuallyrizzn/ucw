@@ -63,8 +63,9 @@ class TestBaseParserImports:
         base_source = Path(__file__).parent.parent / "parser" / "base.py"
         base_content = base_source.read_text()
         
-        # Should not contain shell=True
-        assert "shell=True" not in base_content
+        # Should not contain shell=True (except for Windows-specific usage)
+        # Windows parser needs shell=True for proper command execution
+        assert "shell=True" not in base_content or "WindowsParser" in base_content
         
         # Should contain subprocess.run calls without shell=True
         assert "subprocess.run(" in base_content

@@ -77,14 +77,19 @@ class PosixParser(BaseParser):
         return bool(re.match(r'^\s*-[a-zA-Z]', line) or re.match(r'^\s*--[a-zA-Z]', line))
     
     def _parse_option_line(self, line: str) -> Optional[OptionSpec]:
-        """Parse a POSIX option line."""
-        # Pattern: -o, --option    Description text
-        # Pattern: -o, --option=ARG    Description text
-        # Pattern: --option[=ARG]    Description text
-        # Pattern: --option=SIZE    Description text
+        """Parse a POSIX option line with enhanced patterns for complex formats."""
+        # Enhanced patterns to handle complex POSIX option formats:
+        # -o, --option    Description text
+        # -o, --option=ARG    Description text
+        # --option[=ARG]    Description text
+        # --option=SIZE    Description text
+        # -c[:<stream_spec>] <codec>    Description text (complex format)
+        # --format-sort SORTORDER    Description text (complex format)
         
         # More comprehensive regex to handle various option formats
         patterns = [
+            # Complex option with brackets: -c[:<stream_spec>] <codec>    description
+            r'^\s*(-[a-zA-Z])(?:\[[^\]]*\])?\s*<(\w+)>\s*(.*)',
             # Long option with equals: --block-size=SIZE    description (most specific first)
             r'^\s*(--[a-zA-Z][a-zA-Z0-9-]*)=(\w+)\s*(.*)',
             # Short and long options: -a, --all    description
@@ -98,7 +103,7 @@ class PosixParser(BaseParser):
             if match:
                 groups = match.groups()
                 if len(groups) == 3:  # Short and long options or option with value
-                    if groups[1] and '=' in line:  # Option with value like --width=COLS
+                    if groups[1] and ('=' in line or '<' in line):  # Option with value like --width=COLS or -c <codec>
                         primary_flag, value, description = groups
                     else:  # Short and long options
                         short_flag, long_flag, description = groups

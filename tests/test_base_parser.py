@@ -90,6 +90,7 @@ Options:
                 ["testcmd", "--help"],
                 capture_output=True,
                 text=True,
+                shell=False,
                 timeout=10
             )
     
@@ -185,6 +186,7 @@ Options:
                 ["testcmd", "--help"],
                 capture_output=True,
                 text=True,
+                shell=False,
                 timeout=30
             )
     

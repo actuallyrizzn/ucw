@@ -59,19 +59,24 @@ class BaseParser(ABC):
         """
         try:
             cmd = self._get_help_command(command_name)
+            # Use shell=True for Windows commands (they need it for proper execution)
+            use_shell = self.__class__.__name__ == 'WindowsParser'
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
+                shell=use_shell,
                 timeout=self.timeout
             )
             
-            if result.returncode == 0 and result.stdout.strip():
+            # Accept help text if it contains meaningful content, even with non-zero return codes
+            # Many commands (like Windows dir /?) return non-zero codes but provide valid help
+            if result.stdout.strip() and len(result.stdout.strip()) > 20:
                 return result.stdout
             else:
                 # Try alternative help methods
                 alt_help = self._try_alternative_help(command_name)
-                if alt_help is not None:
+                if alt_help is not None and alt_help != f"No help available for {command_name}":
                     return alt_help
                 else:
                     return f"No help available for {command_name}"
