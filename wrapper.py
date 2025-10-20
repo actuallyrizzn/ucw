@@ -19,12 +19,13 @@ class CommandWrapper:
         self.command_name = command_name
         self.spec = spec
     
-    def run(self, **kwargs) -> ExecutionResult:
+    def run(self, *args, **kwargs) -> ExecutionResult:
         """
         Execute the command with given arguments.
         
         Args:
-            **kwargs: Command arguments
+            *args: Positional arguments in order
+            **kwargs: Named options/flags
             
         Returns:
             ExecutionResult object
@@ -42,6 +43,16 @@ class CommandWrapper:
                 elif not option.is_boolean and value is not None:
                     # Value flag - add flag and value
                     cmd_args.extend([option.flag, str(value)])
+        
+        # Add positional arguments
+        for i, arg in enumerate(self.spec.positional_args):
+            if i < len(args):
+                # Use provided positional argument
+                cmd_args.append(str(args[i]))
+            elif arg.required:
+                # Required argument not provided - this will likely cause an error
+                # but we'll let the command handle it
+                pass
         
         # Execute command
         start_time = time.time()
