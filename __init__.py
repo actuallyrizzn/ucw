@@ -41,8 +41,13 @@ class UniversalCommandWrapper:
             self.platform = "posix"
         
         # Configure timeouts with environment variable support
-        self.timeout_help = timeout_help or int(os.environ.get('UCW_TIMEOUT_HELP', '10'))
-        self.timeout_exec = timeout_exec or int(os.environ.get('UCW_TIMEOUT_EXEC', '30'))
+        try:
+            self.timeout_help = timeout_help or int(os.environ.get('UCW_TIMEOUT_HELP', '10'))
+            self.timeout_exec = timeout_exec or int(os.environ.get('UCW_TIMEOUT_EXEC', '30'))
+        except ValueError:
+            # Use defaults if environment variables are invalid
+            self.timeout_help = timeout_help or 10
+            self.timeout_exec = timeout_exec or 30
         
         self.parser = self._create_parser()
         self.wrapper_builder = WrapperBuilder(timeout_exec=self.timeout_exec)
@@ -64,6 +69,15 @@ class UniversalCommandWrapper:
             return WindowsParser(timeout=self.timeout_help)
         elif self.platform == "posix":
             return PosixParser(timeout=self.timeout_help)
+        elif self.platform == "auto":
+            # Auto-detect platform
+            detected = self._detect_platform()
+            if detected == "windows":
+                return WindowsParser(timeout=self.timeout_help)
+            elif detected == "posix":
+                return PosixParser(timeout=self.timeout_help)
+            else:
+                raise ValueError(f"Unsupported platform: {detected}")
         else:
             raise ValueError(f"Unknown platform: {self.platform}")
     

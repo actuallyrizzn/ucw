@@ -29,6 +29,13 @@ class BaseParser(ABC):
         Returns:
             CommandSpec object with parsed information
         """
+        if command_name is None:
+            raise TypeError("Command name cannot be None")
+        if not command_name:
+            raise ValueError("Command name cannot be empty")
+        if not isinstance(command_name, str):
+            raise TypeError("Command name must be a string")
+        
         help_text = self._get_help_text(command_name)
         return self._parse_help_text(command_name, help_text)
     
@@ -55,7 +62,11 @@ class BaseParser(ABC):
                 return result.stdout
             else:
                 # Try alternative help methods
-                return self._try_alternative_help(command_name)
+                alt_help = self._try_alternative_help(command_name)
+                if alt_help is not None:
+                    return alt_help
+                else:
+                    return f"No help available for {command_name}"
                 
         except subprocess.TimeoutExpired:
             return f"Help command timed out for {command_name}"

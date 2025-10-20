@@ -51,7 +51,7 @@ class PosixParser(BaseParser):
         except:
             pass
         
-        return f"No help available for {command_name}"
+        return None
     
     def _parse_help_text(self, command_name: str, help_text: str) -> CommandSpec:
         """Parse POSIX help text into CommandSpec."""
@@ -85,25 +85,32 @@ class PosixParser(BaseParser):
         
         # More comprehensive regex to handle various option formats
         patterns = [
+            # Long option with equals: --block-size=SIZE    description (most specific first)
+            r'^\s*(--[a-zA-Z][a-zA-Z0-9-]*)=(\w+)\s*(.*)',
             # Short and long options: -a, --all    description
-            r'^\s*(-[a-zA-Z])(?:,\s*(--[a-zA-Z][a-zA-Z0-9-]*))?\s+(.+)',
+            r'^\s*(-[a-zA-Z])(?:,\s*(--[a-zA-Z][a-zA-Z0-9-]*))?\s*(.*)',
             # Long option only: --all    description
-            r'^\s*(--[a-zA-Z][a-zA-Z0-9-]*)\s+(.+)',
-            # Long option with equals: --block-size=SIZE    description
-            r'^\s*(--[a-zA-Z][a-zA-Z0-9-]*=\w+)\s+(.+)',
+            r'^\s*(--[a-zA-Z][a-zA-Z0-9-]*)\s*(.*)',
         ]
         
         for pattern in patterns:
             match = re.match(pattern, line)
             if match:
                 groups = match.groups()
-                if len(groups) == 3:  # Short and long options
-                    short_flag, long_flag, description = groups
-                    primary_flag = long_flag if long_flag else short_flag
+                if len(groups) == 3:  # Short and long options or option with value
+                    if groups[1] and '=' in line:  # Option with value like --width=COLS
+                        primary_flag, value, description = groups
+                    else:  # Short and long options
+                        short_flag, long_flag, description = groups
+                        primary_flag = long_flag if long_flag else short_flag
                 elif len(groups) == 2:  # Long option only
                     primary_flag, description = groups
                 else:
                     continue
+                
+                # Handle empty description
+                if not description:
+                    description = ""
                 
                 # Determine if it takes a value
                 takes_value = '=' in primary_flag or any(word in description.upper() for word in ['ARG', 'SIZE', 'WORD', 'COLS', 'PATTERN', 'WHEN'])
@@ -122,9 +129,31 @@ class PosixParser(BaseParser):
     
     def _extract_description(self, help_text: str) -> str:
         """Extract command description from help text."""
+        # If help text contains error messages, return empty description
+        if any(error_msg in help_text for error_msg in [
+            "Failed to get help", "Help command timed out", "No help available"
+        ]):
+            return ""
+        
         lines = help_text.split('\n')
         
-        # Look for description in first few lines
+        # Look for NAME section first (man page format)
+        in_name_section = False
+        for line in lines:
+            line = line.strip()
+            if line.startswith('NAME'):
+                in_name_section = True
+                continue
+            elif in_name_section and line and not line.startswith(('SYNOPSIS', 'DESCRIPTION', 'OPTIONS')):
+                # Extract description from NAME line like "ls - list directory contents"
+                if ' - ' in line:
+                    return line.split(' - ', 1)[1].strip()
+                elif line and not line.startswith('-'):
+                    return line
+            elif in_name_section and line.startswith(('SYNOPSIS', 'DESCRIPTION', 'OPTIONS')):
+                break
+        
+        # Fallback: Look for description in first few lines
         for line in lines[:10]:
             line = line.strip()
             if line and not line.startswith(('Usage:', 'SYNOPSIS:', '-', 'Options:')):

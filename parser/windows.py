@@ -88,6 +88,12 @@ class WindowsParser(BaseParser):
     
     def _extract_description(self, help_text: str) -> str:
         """Extract command description from help text."""
+        # If help text contains error messages, return empty description
+        if any(error_msg in help_text for error_msg in [
+            "Failed to get help", "Help command timed out", "No help available"
+        ]):
+            return ""
+        
         lines = help_text.split('\n')
         
         # Look for description in first few lines

@@ -93,14 +93,28 @@ def setup_execute_command(subparsers):
     """Setup the execute command."""
     parser = subparsers.add_parser("execute", help="Execute {command_name} command")
 {argument_definitions}
+    parser.add_argument("--args", nargs="*", help="Positional arguments")
+    parser.add_argument("--options", help="JSON string of options")
 
 
 def execute_command(args) -> Dict[str, Any]:
     """Execute the {command_name} command."""
     try:
+        # Parse options if provided
+        options = {{}}
+        if hasattr(args, 'options') and args.options:
+            try:
+                options = json.loads(args.options)
+            except json.JSONDecodeError as e:
+                return {{"status": "error", "error": f"Invalid JSON options: {{e}}"}}
+        
         # Build command arguments
         cmd_args = ["{command_name}"]
 {argument_handling}
+        
+        # Add positional arguments
+        if hasattr(args, 'args') and args.args:
+            cmd_args.extend(args.args)
         
         # Execute command
         start_time = time.time()

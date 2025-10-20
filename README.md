@@ -25,15 +25,8 @@ A powerful command wrapper generator that can be used standalone or as an SMCP p
 
 - [Installation](#installation)
 - [Installation Guide](INSTALL.md) - Detailed installation instructions
+- [Usage Guide](docs/usage-guide.md) - Comprehensive usage documentation
 - [Quick Start](#quick-start)
-- [Usage](#usage)
-  - [CLI Interface](#cli-interface)
-  - [Library Interface](#library-interface)
-- [Examples](#examples)
-- [API Reference](#api-reference)
-- [Architecture](#architecture)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## 🛠 Installation
 
@@ -123,266 +116,45 @@ python cli.py --standalone wrap find --update cli.py
 from ucw import UniversalCommandWrapper
 
 # Initialize UCW
-ucw = UniversalCommandWrapper(platform="auto")
+ucw = UniversalCommandWrapper(platform_name="auto")
 
 # Parse and wrap a command
-spec = ucw.parse_command("ls")
+spec = ucw.parse_command("echo")
 wrapper = ucw.build_wrapper(spec)
 
-# Execute the command
-result = wrapper.run(l=True, a=True)
+# Execute the command with arguments
+result = wrapper.run("hello", "world")
 print(result.stdout)
 ```
 
 ## 📖 Usage
 
-### CLI Interface
+For comprehensive usage documentation, see the [Usage Guide](docs/usage-guide.md).
 
-The UCW CLI provides a simple interface for command wrapping:
+### Quick Examples
 
+**CLI Usage:**
 ```bash
-ucw wrap <command> [options]
+# Generate wrapper
+python cli.py wrap echo
+
+# Parse command
+python cli.py parse ls
+
+# Execute command
+python cli.py execute echo --args "hello" "world"
 ```
 
-#### Options
-
-- `--output`, `-o`: Output file path for generated wrapper
-- `--update`, `-u`: Update existing file instead of creating new one
-- `--platform`: Target platform (`windows`, `posix`, `auto`)
-
-#### Examples
-
-```bash
-# Basic wrapper generation
-ucw wrap cp
-# Output: Shows positional args and available options
-
-# Generate CLI file (creates new cli.py)
-python cli.py wrap tar --output cli.py
-
-# Update existing CLI file (modifies existing cli.py)
-python cli.py wrap find --update cli.py
-```
-
-### Library Interface
-
-The UCW library provides programmatic access to command wrapping functionality:
-
-#### Basic Usage
-
+**Library Usage:**
 ```python
-from ucw import UniversalCommandWrapper
+from __init__ import UniversalCommandWrapper
 
-# Initialize with platform detection
 ucw = UniversalCommandWrapper()
-
-# Parse a command
-spec = ucw.parse_command("grep")
-print(f"Command: {spec.name}")
-print(f"Options: {len(spec.options)}")
-print(f"Positional args: {len(spec.positional_args)}")
-
-# Build wrapper
+spec = ucw.parse_command("echo")
 wrapper = ucw.build_wrapper(spec)
-
-# Execute with arguments
-result = wrapper.run("pattern", "file.txt", i=True)
-```
-
-#### Advanced Usage
-
-```python
-# Platform-specific initialization
-ucw_windows = UniversalCommandWrapper(platform_name="windows")
-ucw_posix = UniversalCommandWrapper(platform_name="posix")
-
-# Parse multiple commands
-commands = ["cp", "mv", "grep", "find"]
-specs = {}
-for cmd in commands:
-    specs[cmd] = ucw.parse_command(cmd)
-
-# Generate CLI files
-for cmd, spec in specs.items():
-    wrapper = ucw.build_wrapper(spec)
-    file_path = ucw.write_wrapper(cmd, output=f"{cmd}_cli.py")
-    print(f"Generated {file_path}")
-```
-
-## 💡 Examples
-
-### Example 1: File Operations
-
-```python
-from ucw import UniversalCommandWrapper
-
-ucw = UniversalCommandWrapper()
-
-# Wrap cp command
-cp_spec = ucw.parse_command("cp")
-cp_wrapper = ucw.build_wrapper(cp_spec)
-
-# Copy file with options
-result = cp_wrapper.run("source.txt", "dest.txt", verbose=True, force=True)
-print(f"Copy result: {result.success}")
-
-# Wrap mv command
-mv_spec = ucw.parse_command("mv")
-mv_wrapper = ucw.build_wrapper(mv_spec)
-
-# Move file
-result = mv_wrapper.run("old_name.txt", "new_name.txt")
-```
-
-### Example 2: Text Processing
-
-```python
-# Wrap grep command
-grep_spec = ucw.parse_command("grep")
-grep_wrapper = ucw.build_wrapper(grep_spec)
-
-# Search with multiple options
-result = grep_wrapper.run(
-    "error", 
-    "logfile.txt", 
-    i=True,  # ignore case
-    n=True,  # line numbers
-    r=True   # recursive
-)
-
-print(f"Found {len(result.stdout.splitlines())} matches")
-```
-
-### Example 3: System Information
-
-```python
-# Wrap ls command
-ls_spec = ucw.parse_command("ls")
-ls_wrapper = ucw.build_wrapper(ls_spec)
-
-# List with detailed information
-result = ls_wrapper.run(
-    l=True,    # long format
-    a=True,    # all files
-    h=True     # human readable
-)
-
-print("Directory contents:")
+result = wrapper.run("hello", "world")
 print(result.stdout)
 ```
-
-### Example 4: MCP Plugin Generation
-
-```python
-# Generate MCP plugin for tar command
-tar_spec = ucw.parse_command("tar")
-tar_wrapper = ucw.build_wrapper(tar_spec)
-
-# Create plugin file
-plugin_path = ucw.write_wrapper("tar", output="tar_plugin.py")
-print(f"Generated MCP plugin: {plugin_path}")
-
-# The generated file can be used as an MCP plugin
-```
-
-## 📚 API Reference
-
-### Core Classes
-
-#### `UniversalCommandWrapper`
-
-Main class for command analysis and wrapper generation.
-
-```python
-class UniversalCommandWrapper:
-    def __init__(self, platform_name: Optional[str] = None)
-    def parse_command(self, command_name: str) -> CommandSpec
-    def build_wrapper(self, spec: CommandSpec) -> CommandWrapper
-    def write_wrapper(self, command_name: str, output: Optional[str] = None, update: bool = False) -> Union[CommandWrapper, str]
-```
-
-#### `CommandSpec`
-
-Represents a parsed command specification.
-
-```python
-@dataclass
-class CommandSpec:
-    name: str
-    usage: str
-    options: List[OptionSpec]
-    positional_args: List[PositionalArgSpec]
-    description: str
-    examples: List[str]
-```
-
-#### `OptionSpec`
-
-Represents a command option/flag.
-
-```python
-@dataclass
-class OptionSpec:
-    flag: str
-    takes_value: bool
-    description: Optional[str]
-    type_hint: Optional[str]
-    required: bool
-    default: Optional[str]
-```
-
-#### `PositionalArgSpec`
-
-Represents a positional argument.
-
-```python
-@dataclass
-class PositionalArgSpec:
-    name: str
-    required: bool
-    variadic: bool
-    description: Optional[str]
-    type_hint: Optional[str]
-```
-
-#### `CommandWrapper`
-
-Callable wrapper for executing commands.
-
-```python
-class CommandWrapper:
-    def __init__(self, command_name: str, spec: CommandSpec)
-    def run(self, *args, **kwargs) -> ExecutionResult
-```
-
-#### `ExecutionResult`
-
-Represents the result of command execution.
-
-```python
-@dataclass
-class ExecutionResult:
-    command: str
-    stdout: str
-    stderr: str
-    return_code: int
-    elapsed: float
-    success: bool
-```
-
-### Platform-Specific Parsers
-
-#### `BaseParser`
-
-Abstract base class for command parsers.
-
-#### `WindowsParser`
-
-Parser for Windows command help text (`command /?`).
-
-#### `PosixParser`
-
-Parser for POSIX command help text (`command --help`, `man command`).
 
 ## 🏗 Architecture
 

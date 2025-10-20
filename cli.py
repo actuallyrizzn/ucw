@@ -55,6 +55,10 @@ def main():
             # Output JSON result for SMCP compatibility
             print(json.dumps(result, indent=2))
         
+        # Exit with error code if there was an error
+        if result.get("status") == "error":
+            sys.exit(1)
+        
     except Exception as e:
         error_result = {"status": "error", "error": str(e)}
         if args.standalone:
@@ -175,7 +179,7 @@ def setup_wrap_command(subparsers):
 
 def setup_parse_command(subparsers):
     """Setup the parse command."""
-    parser = subparsers.add_parser("parse", help="Parse a command's help text")
+    parser = subparsers.add_parser("parse", help="Parse command help text", description="Parse command help text")
     parser.add_argument("command_name", help="Name of the command to parse")
     parser.add_argument("--platform", choices=["windows", "posix", "linux", "auto"],
                        default="auto", help="Target platform")
@@ -187,10 +191,10 @@ def setup_parse_command(subparsers):
 
 def setup_execute_command(subparsers):
     """Setup the execute command."""
-    parser = subparsers.add_parser("execute", help="Execute a wrapped command")
+    parser = subparsers.add_parser("execute", help="Execute a command", description="Execute a command")
     parser.add_argument("command_name", help="Name of the command to execute")
     parser.add_argument("--args", nargs="*", help="Positional arguments")
-    parser.add_argument("--options", help="JSON string of options")
+    parser.add_argument("--options", default="{}", help="JSON string of options")
     parser.add_argument("--platform", choices=["windows", "posix", "linux", "auto"],
                        default="auto", help="Target platform")
     parser.add_argument("--timeout-help", type=int, default=10,
@@ -202,6 +206,10 @@ def setup_execute_command(subparsers):
 def execute_wrap_command(args) -> Dict[str, Any]:
     """Execute the wrap command."""
     try:
+        # Validate timeout values
+        if args.timeout_help <= 0 or args.timeout_exec <= 0:
+            return {"status": "error", "error": "Timeout values must be positive"}
+        
         # Initialize UCW
         platform_name = args.platform if args.platform != "auto" else None
         ucw = UniversalCommandWrapper(
@@ -212,18 +220,21 @@ def execute_wrap_command(args) -> Dict[str, Any]:
         
         if args.output:
             # Generate file
-            file_path = ucw.write_wrapper(
-                args.command_name,
-                output=args.output,
-                update=args.update
-            )
-            return {
-                "status": "success",
-                "message": f"Generated wrapper for '{args.command_name}' in {file_path}",
-                "command": args.command_name,
-                "output_file": file_path,
-                "update_mode": args.update
-            }
+            try:
+                file_path = ucw.write_wrapper(
+                    args.command_name,
+                    output=args.output,
+                    update=args.update
+                )
+                return {
+                    "status": "success",
+                    "message": f"Generated wrapper for '{args.command_name}' in {file_path}",
+                    "command": args.command_name,
+                    "output_file": file_path,
+                    "update_mode": args.update
+                }
+            except (OSError, IOError) as e:
+                return {"status": "error", "error": str(e)}
         else:
             # Generate in-memory wrapper
             wrapper = ucw.write_wrapper(args.command_name)
@@ -275,6 +286,10 @@ def execute_wrap_command(args) -> Dict[str, Any]:
 def execute_parse_command(args) -> Dict[str, Any]:
     """Execute the parse command."""
     try:
+        # Validate timeout values
+        if args.timeout_help <= 0 or args.timeout_exec <= 0:
+            return {"status": "error", "error": "Timeout values must be positive"}
+        
         # Initialize UCW
         platform_name = args.platform if args.platform != "auto" else None
         ucw = UniversalCommandWrapper(
@@ -321,6 +336,10 @@ def execute_parse_command(args) -> Dict[str, Any]:
 def execute_execute_command(args) -> Dict[str, Any]:
     """Execute the execute command."""
     try:
+        # Validate timeout values
+        if args.timeout_help <= 0 or args.timeout_exec <= 0:
+            return {"status": "error", "error": "Timeout values must be positive"}
+        
         # Initialize UCW
         platform_name = args.platform if args.platform != "auto" else None
         ucw = UniversalCommandWrapper(

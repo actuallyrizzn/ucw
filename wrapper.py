@@ -16,6 +16,13 @@ class CommandWrapper:
     """Callable wrapper for a system command."""
     
     def __init__(self, command_name: str, spec: CommandSpec, timeout: int = 30):
+        if not command_name:
+            raise ValueError("Command name cannot be empty")
+        if spec is None:
+            raise AttributeError("CommandSpec cannot be None")
+        if not isinstance(spec, CommandSpec):
+            raise AttributeError("spec must be a CommandSpec instance")
+        
         self.command_name = command_name
         self.spec = spec
         self.timeout = timeout
