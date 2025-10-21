@@ -19,7 +19,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated project structure for better organization
 - Enhanced error handling and validation
 
-## [1.0.0] - 2024-12-19
+## [1.1.0] - 2025-10-20
+
+### Added
+- **Issue Resolution**: Comprehensive fix for all open issues (#1-#12)
+- **Parsing Robustness**: Enhanced Windows and POSIX parser robustness
+  - Support for complex help formats and non-zero return codes
+  - Improved regex patterns for complex option formats
+  - Better handling of Windows commands like `dir /?`
+- **Configurable Timeouts**: Added `timeout_help` and `timeout_exec` parameters
+- **Platform Support**: Added "linux" alias for "posix" platform
+- **Test Suite**: Comprehensive pytest-based test suite with 90%+ coverage
+- **Requirements Management**: Separated production and testing dependencies
+- **Documentation**: Fixed documentation drift and added comprehensive guides
+
+### Fixed
+- **Issue #1**: Removed duplicate BaseParser and eliminated shell=True usage
+- **Issue #2**: Added missing subprocess import in Windows parser
+- **Issue #3**: Removed duplicate WrapperBuilder class
+- **Issue #4**: Fixed generated plugin argparse attribute names
+- **Issue #5**: Fixed CommandWrapper kwargs mapping mismatches
+- **Issue #6**: Fixed FileWriter update mode duplication
+- **Issue #7**: Added linux alias for posix platform name
+- **Issue #8**: Converted tests to proper pytest format
+- **Issue #9**: Enhanced parsing robustness for complex help formats
+- **Issue #10**: Added configurable timeout support
+- **Issue #12**: Fixed documentation drift and API alignment
+
+### Changed
+- **Enhanced Parsing**: More robust help text parsing with flexible return codes
+- **Better Error Handling**: Improved error messages and validation
+- **Test Coverage**: Expanded from basic tests to comprehensive suite
+- **Documentation**: Updated all documentation to reflect current API
+- **Requirements**: Separated production and development dependencies
+
+## [1.0.0] - 2025-10-20
 
 ### Added
 - **Core Functionality**
@@ -102,7 +136,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Error handling tests
 - Performance benchmarks
 
-## [0.9.0] - 2024-12-18
+## [0.9.0] - 2025-10-20
 
 ### Added
 - Initial implementation of UCW core functionality
@@ -115,7 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved option detection algorithms
 - Enhanced type inference system
 
-## [0.8.0] - 2024-12-17
+## [0.8.0] - 2025-10-20
 
 ### Added
 - Windows parser implementation
@@ -128,7 +162,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resolved help text parsing problems
 - Corrected option line detection
 
-## [0.7.0] - 2024-12-16
+## [0.7.0] - 2025-10-20
 
 ### Added
 - Initial parser framework
@@ -141,7 +175,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced error handling
 - Better timeout management
 
-## [0.6.0] - 2024-12-15
+## [0.6.0] - 2025-10-20
 
 ### Added
 - Core data models
@@ -154,7 +188,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved type hints
 - Enhanced model validation
 
-## [0.5.0] - 2024-12-14
+## [0.5.0] - 2025-10-20
 
 ### Added
 - Initial project structure
@@ -167,7 +201,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation structure
 - Development workflow
 
-## [0.4.0] - 2024-12-13
+## [0.4.0] - 2025-10-20
 
 ### Added
 - Project planning and design
@@ -180,7 +214,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Feature prioritization
 - Implementation strategy
 
-## [0.3.0] - 2024-12-12
+## [0.3.0] - 2025-10-20
 
 ### Added
 - Initial project concept
@@ -193,7 +227,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Feature set definition
 - Target audience identification
 
-## [0.2.0] - 2024-12-11
+## [0.2.0] - 2025-10-20
 
 ### Added
 - Project idea documentation
@@ -206,7 +240,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Technical approach
 - Implementation strategy
 
-## [0.1.0] - 2024-12-10
+## [0.1.0] - 2025-10-14
 
 ### Added
 - Initial project setup
