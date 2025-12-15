@@ -419,12 +419,20 @@ if __name__ == "__main__":
                 lines.append(f'            value = args["{param_name}"]')
                 lines.append(f'            if isinstance(value, list):')
                 lines.append(f'                cmd_args.extend([str(v) for v in value])')
+                lines.append(f'            elif isinstance(value, str) and " " in value:')
+                lines.append(f'                # Split string on spaces to handle multiple tokens (e.g., "repo list owner --limit 110")')
+                lines.append(f'                cmd_args.extend(value.split())')
                 lines.append(f'            else:')
                 lines.append(f'                cmd_args.append(str(value))')
             else:
-                # Single argument
+                # Single argument - but may contain multiple space-separated tokens
                 lines.append(f'        if args.get("{param_name}") is not None:')
-                lines.append(f'            cmd_args.append(str(args["{param_name}"]))')
+                lines.append(f'            value = args["{param_name}"]')
+                lines.append(f'            if isinstance(value, str) and " " in value:')
+                lines.append(f'                # Split string on spaces to handle multiple tokens (e.g., "repo list owner --limit 110")')
+                lines.append(f'                cmd_args.extend(value.split())')
+                lines.append(f'            else:')
+                lines.append(f'                cmd_args.append(str(value))')
         
         return '\n'.join(lines) if lines else '        pass'
     
