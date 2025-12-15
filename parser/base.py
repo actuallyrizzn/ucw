@@ -104,10 +104,28 @@ class BaseParser(ABC):
     def _extract_usage(self, help_text: str) -> str:
         """Extract usage line from help text."""
         lines = help_text.split('\n')
-        for line in lines:
-            line = line.strip()
-            if any(keyword in line.lower() for keyword in ['usage:', 'syntax:', 'command:']):
-                return line
+        for i, line in enumerate(lines):
+            line_stripped = line.strip()
+            line_lower = line_stripped.lower()
+            # Check if this line is a usage header (like "USAGE" or "Usage:")
+            # Match both "usage" (standalone) and "usage:" (with colon)
+            is_usage_header = (
+                line_lower == 'usage' or
+                any(keyword in line_lower for keyword in ['usage:', 'syntax:', 'command:'])
+            )
+            if is_usage_header:
+                # If the line itself contains the usage (like "Usage: command args"), return it
+                if ':' in line_stripped:
+                    usage_part = line_stripped.split(':', 1)[1].strip()
+                    if usage_part:
+                        return line_stripped
+                # Otherwise, look for the next non-empty line (multi-line format like "USAGE\n  command args")
+                for j in range(i + 1, min(i + 5, len(lines))):  # Look ahead up to 5 lines
+                    next_line = lines[j].strip()
+                    if next_line and not next_line.upper().startswith(('CORE', 'GITHUB', 'ALIAS', 'ADDITIONAL', 'HELP', 'FLAGS', 'OPTIONS', 'EXAMPLES', 'INHERITED')):
+                        return next_line
+                # If no next line found, return the header line itself
+                return line_stripped
         return ""
     
     def _extract_options(self, help_text: str) -> List[OptionSpec]:
@@ -146,6 +164,8 @@ class BaseParser(ABC):
         option_patterns = [
             r'\[option\]\.\.\.',
             r'\[option\]',
+            r'\[flags?\]',  # Match [flags] or [flag]
+            r'\[flag\]',
             r'\[-t\]',
             r'\[-h\]',
             r'\[-l\]',
