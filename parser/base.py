@@ -118,12 +118,36 @@ class BaseParser(ABC):
                 if ':' in line_stripped:
                     usage_part = line_stripped.split(':', 1)[1].strip()
                     if usage_part:
-                        return line_stripped
+                        # Collect continuation lines (indented lines that look like usage)
+                        usage_parts = [usage_part]
+                        for j in range(i + 1, min(i + 6, len(lines))):  # Look ahead up to 6 lines
+                            next_line = lines[j]
+                            next_stripped = next_line.strip()
+                            # Stop at empty line or section header
+                            if not next_stripped:
+                                break
+                            # If line is indented (starts with space) and contains usage-like chars, it's a continuation
+                            if next_line.startswith(' ') and any(c in next_stripped for c in ['<', '>', '[', ']', '-', '|']):
+                                usage_parts.append(next_stripped)
+                            else:
+                                break
+                        return ' '.join(usage_parts)
                 # Otherwise, look for the next non-empty line (multi-line format like "USAGE\n  command args")
-                for j in range(i + 1, min(i + 5, len(lines))):  # Look ahead up to 5 lines
+                for j in range(i + 1, min(i + 6, len(lines))):  # Look ahead up to 6 lines
                     next_line = lines[j].strip()
-                    if next_line and not next_line.upper().startswith(('CORE', 'GITHUB', 'ALIAS', 'ADDITIONAL', 'HELP', 'FLAGS', 'OPTIONS', 'EXAMPLES', 'INHERITED')):
-                        return next_line
+                    if next_line and not next_line.upper().startswith(('CORE', 'GITHUB', 'ALIAS', 'ADDITIONAL', 'HELP', 'FLAGS', 'OPTIONS', 'EXAMPLES', 'INHERITED', 'THESE', 'START', 'WORK', 'EXAMINE', 'GROW')):
+                        # Collect continuation lines
+                        usage_parts = [next_line]
+                        for k in range(j + 1, min(j + 5, len(lines))):
+                            cont_line = lines[k]
+                            cont_stripped = cont_line.strip()
+                            if not cont_stripped:
+                                break
+                            if cont_line.startswith(' ') and any(c in cont_stripped for c in ['<', '>', '[', ']', '-', '|']):
+                                usage_parts.append(cont_stripped)
+                            else:
+                                break
+                        return ' '.join(usage_parts)
                 # If no next line found, return the header line itself
                 return line_stripped
         return ""
@@ -160,8 +184,18 @@ class BaseParser(ABC):
             command_name = command_match.group(1)
             usage_clean = usage_clean.replace(command_name, '', 1)
         
-        # Remove common option patterns more comprehensively
+        # Remove option patterns more comprehensively
+        # Handle complex patterns like [-v | --version], [-C <path>], etc.
+        # First, remove all bracketed option patterns (they're all optional flags)
+        # Match patterns like: [-v | --version], [-C <path>], [--exec-path[=<path>]], etc.
         option_patterns = [
+            r'\[-?\w+\s*\|\s*--?\w+\]',  # [-v | --version] or similar
+            r'\[-?\w+\s*\|\s*--?\w+\s*\|\s*--?\w+\s*\|\s*--?\w+\]',  # [-p | --paginate | -P | --no-pager]
+            r'\[-?\w+\s*\|\s*--?\w+\s*\|\s*--?\w+\]',  # Shorter version
+            r'\[--?\w+\[?=?\s*<\w+>\]?\]',  # [--exec-path[=<path>]] or [--git-dir=<path>]
+            r'\[--?\w+\]',  # [--html-path], [--bare], etc.
+            r'\[-?\w+\s*=\s*<\w+>\]',  # [-c <name>=<value>]
+            r'\[-?\w+\s*<\w+>\]',  # [-C <path>]
             r'\[option\]\.\.\.',
             r'\[option\]',
             r'\[flags?\]',  # Match [flags] or [flag]
@@ -173,9 +207,6 @@ class BaseParser(ABC):
             r'\[-o\w*\]',
             r'\[-d\w*\]',
             r'\[-d\s+\w+\]',
-            r'\[-h\]',
-            r'\[-l\]',
-            r'\[-p\]',
             r'\[-olevel\]',
             r'\[-d\s+debugopts\]',
         ]
@@ -183,21 +214,68 @@ class BaseParser(ABC):
         for pattern in option_patterns:
             usage_clean = re.sub(pattern, '', usage_clean, flags=re.IGNORECASE)
         
+        # Remove pipe characters and other separators
+        usage_clean = re.sub(r'\s*\|\s*', ' ', usage_clean)
+        
         # Clean up extra spaces and empty parts
         usage_clean = re.sub(r'\s+', ' ', usage_clean).strip()
+        
+        # Special handling for git-like commands: look for <command> and [<args>] patterns
+        # These are common patterns in hierarchical commands
+        # Check in the original usage string (before cleaning) to preserve patterns
+        original_usage = usage.lower()
+        
+        args = []
+        
+        # Check for <command> pattern (required positional)
+        if re.search(r'<command>', original_usage, re.IGNORECASE):
+            args.append(PositionalArgSpec(
+                name="COMMAND",
+                required=True,
+                variadic=False,
+                type_hint='str'
+            ))
+        
+        # Check for [<args>] or <args>... pattern (optional variadic)
+        if re.search(r'\[<args>\]|\[<args>\.\.\.\]|<args>\.\.\.', original_usage, re.IGNORECASE):
+            args.append(PositionalArgSpec(
+                name="ARGS",
+                required=False,
+                variadic=True,
+                type_hint='str'
+            ))
+        
+        # If we found git-like patterns, return them
+        if args:
+            return args
         
         if not usage_clean:
             return []
         
         # Parse positional arguments
-        args = []
         parts = usage_clean.split()
         
         for part in parts:
             part = part.strip()
             if not part or part == ':':
                 continue
-                
+            
+            # Skip pipe characters and other separators
+            if part in ['|', '||', '&&', '=', '==']:
+                continue
+            
+            # Skip parts that look like options (start with - or --)
+            if part.startswith('-') or part.startswith('--'):
+                continue
+            
+            # Skip parts that contain equals (likely option values like name=value)
+            if '=' in part and not part.startswith('<'):
+                continue
+            
+            # Skip single character parts that are likely separators
+            if len(part) == 1 and part not in ['<', '>']:
+                continue
+            
             # Determine if argument is required (not in brackets)
             required = not (part.startswith('[') and part.endswith(']'))
             
@@ -212,6 +290,22 @@ class BaseParser(ABC):
             
             # Skip empty parts
             if not part:
+                continue
+            
+            # Skip if it's just angle brackets without content
+            if part in ['<', '>', '<>']:
+                continue
+            
+            # Clean up angle bracket notation: <command> -> command, <args> -> args
+            if part.startswith('<') and part.endswith('>'):
+                part = part[1:-1]
+            
+            # Skip if still empty or too short
+            if not part or len(part) < 2:
+                continue
+            
+            # Skip if it contains invalid characters (like brackets, pipes, etc.)
+            if any(c in part for c in ['[', ']', '|', '=', '-']):
                 continue
             
             # Infer type hint

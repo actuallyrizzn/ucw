@@ -74,19 +74,33 @@ def run(args: Dict[str, Any]) -> Dict[str, Any]:
         elapsed = time.time() - start_time
         
         # Return result in SMCP-compatible format
+        # Always pass through output (stdout or stderr) regardless of return code
+        # This allows commands like 'git' and 'gh' to show help even with non-zero exit codes
+        output = result.stdout if result.stdout else result.stderr
+        
         if result.returncode == 0:
             return {{
-                "result": result.stdout,
+                "result": output,
                 "command": " ".join(cmd_args),
                 "elapsed": elapsed
             }}
         else:
-            return {{
-                "error": result.stderr or f"Command failed with return code {{result.returncode}}",
-                "command": " ".join(cmd_args),
-                "return_code": result.returncode,
-                "elapsed": elapsed
-            }}
+            # Even with non-zero return code, pass through the output
+            # Only use "error" if there's no output at all
+            if output:
+                return {{
+                    "result": output,
+                    "command": " ".join(cmd_args),
+                    "return_code": result.returncode,
+                    "elapsed": elapsed
+                }}
+            else:
+                return {{
+                    "error": f"Command failed with return code {{result.returncode}}",
+                    "command": " ".join(cmd_args),
+                    "return_code": result.returncode,
+                    "elapsed": elapsed
+                }}
         
     except subprocess.TimeoutExpired:
         return {{
@@ -293,6 +307,14 @@ if __name__ == "__main__":
             # Normalize argument name for Python variable
             arg_name = self._normalize_dest_name(arg.name).lower()
             
+            # Skip invalid argument names (like "---", "|", etc.)
+            if not arg_name or arg_name in ['', '-', '--', '---', '|', 'v', 'h', 'c']:
+                continue
+            
+            # Skip if it looks like an option pattern (starts with dash)
+            if arg_name.startswith('-'):
+                continue
+            
             # Build help text
             help_text = arg.description or f"{arg.name} argument"
             if not arg.required:
@@ -304,6 +326,10 @@ if __name__ == "__main__":
             # Use different dest name to avoid conflict with subcommand name 'command'
             flag_name = f"--{arg_name.replace('_', '-')}"
             dest_name = f"arg_{arg_name.replace('-', '_')}"  # Prefix with 'arg_' to avoid conflicts
+            
+            # Validate flag name (must be a valid option string)
+            if not flag_name or len(flag_name) < 3 or not flag_name.startswith('--'):
+                continue
             
             if arg.variadic:
                 # Variadic - can accept multiple values
