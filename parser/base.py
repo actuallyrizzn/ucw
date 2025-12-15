@@ -227,7 +227,25 @@ class BaseParser(ABC):
         
         args = []
         
-        # Check for <command> pattern (required positional)
+        # Check for gh-like pattern: <command> <subcommand> [flags]
+        # Must check BEFORE checking for just <command> to avoid false matches
+        if re.search(r'<command>\s+<subcommand>', original_usage, re.IGNORECASE):
+            args.append(PositionalArgSpec(
+                name="COMMAND",
+                required=True,
+                variadic=False,
+                type_hint='str'
+            ))
+            args.append(PositionalArgSpec(
+                name="SUBCOMMAND",
+                required=True,
+                variadic=False,
+                type_hint='str'
+            ))
+            # If we found gh-like pattern, return immediately
+            return args
+        
+        # Check for <command> pattern (required positional) - for git-like commands
         if re.search(r'<command>', original_usage, re.IGNORECASE):
             args.append(PositionalArgSpec(
                 name="COMMAND",

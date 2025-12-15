@@ -55,13 +55,22 @@ import time
 from typing import Dict, Any
 
 
-def run(args: Dict[str, Any]) -> Dict[str, Any]:
+def run(args: Dict[str, Any], dry_run: bool = False) -> Dict[str, Any]:
     """Execute the {command_name} command."""
     try:
         # Build command arguments
         cmd_args = ["{command_name}"]
 {argument_handling_code}
 {positional_handling_code}
+        
+        # Dry run mode: return what would be executed without running
+        if dry_run:
+            return {{
+                "dry_run": True,
+                "command": " ".join(cmd_args),
+                "cmd_args": cmd_args,
+                "args_received": args
+            }}
         
         # Execute command
         start_time = time.time()
@@ -74,33 +83,41 @@ def run(args: Dict[str, Any]) -> Dict[str, Any]:
         elapsed = time.time() - start_time
         
         # Return result in SMCP-compatible format
-        # Always pass through output (stdout or stderr) regardless of return code
+        # Always pass through output (stdout and/or stderr) regardless of return code
         # This allows commands like 'git' and 'gh' to show help even with non-zero exit codes
-        output = result.stdout if result.stdout else result.stderr
+        # Combine stdout and stderr for complete output visibility
+        output_parts = []
+        if result.stdout:
+            output_parts.append(result.stdout)
+        if result.stderr:
+            output_parts.append(result.stderr)
+        output = '\\n'.join(output_parts) if output_parts else ''
+        
+        # Always include both stdout and stderr in response for debugging
+        response = {{
+            "command": " ".join(cmd_args),
+            "return_code": result.returncode,
+            "elapsed": elapsed
+        }}
+        
+        if result.stdout:
+            response["stdout"] = result.stdout
+        if result.stderr:
+            response["stderr"] = result.stderr
         
         if result.returncode == 0:
-            return {{
-                "result": output,
-                "command": " ".join(cmd_args),
-                "elapsed": elapsed
-            }}
+            # Success: use "result" field with combined output
+            response["result"] = output if output else "Command completed successfully"
+            return response
         else:
-            # Even with non-zero return code, pass through the output
+            # Non-zero return code: still pass through output in "result" field
             # Only use "error" if there's no output at all
             if output:
-                return {{
-                    "result": output,
-                    "command": " ".join(cmd_args),
-                    "return_code": result.returncode,
-                    "elapsed": elapsed
-                }}
+                response["result"] = output
+                return response
             else:
-                return {{
-                    "error": f"Command failed with return code {{result.returncode}}",
-                    "command": " ".join(cmd_args),
-                    "return_code": result.returncode,
-                    "elapsed": elapsed
-                }}
+                response["error"] = f"Command failed with return code {{result.returncode}} (no output)"
+                return response
         
     except subprocess.TimeoutExpired:
         return {{
@@ -153,6 +170,7 @@ Examples:
     
     # Run command
     run_parser = subparsers.add_parser("run", help="Execute {command_name} command")
+    run_parser.add_argument("--dry-run", action="store_true", dest="dry_run", help="Show what would be executed without running")
 {argument_definitions}
 {positional_definitions}
     
@@ -169,11 +187,14 @@ Examples:
     
     try:
         if args.command == "run":
+            # Check for dry-run flag
+            dry_run = getattr(args, 'dry_run', False)
+            
             # Convert argparse args to dict for run function
             run_args = {{}}
 {args_conversion_code}
             # Always call run, even with no args (to show gh help)
-            result = run(run_args)
+            result = run(run_args, dry_run=dry_run)
         else:
             result = {{"error": f"Unknown command: {{args.command}}"}}
         
