@@ -23,6 +23,7 @@ def main():
     # Global options
     parser.add_argument("--standalone", "--human", action="store_true",
                        help="Use human-readable output instead of JSON (for standalone usage)")
+    parser.add_argument("--describe", action="store_true", help=argparse.SUPPRESS)
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
@@ -32,7 +33,19 @@ def main():
     setup_execute_command(subparsers)
     
     args = parser.parse_args()
-    
+
+    if getattr(args, "describe", False):
+        print(json.dumps({
+            "contract_version": "1.0",
+            "plugin": {"name": "ucw", "version": "0.1.0", "description": "Universal Command Wrapper - wrap, parse, execute system commands"},
+            "commands": [
+                {"name": "wrap", "description": "Wrap a system command", "parameters": [{"name": "command_name", "type": "string", "description": "Name of the command to wrap", "required": True}, {"name": "output", "type": "string", "description": "Output file path", "required": False}, {"name": "update", "type": "boolean", "description": "Update existing file", "required": False}, {"name": "platform", "type": "string", "description": "Target platform", "required": False, "default": "auto"}, {"name": "timeout_help", "type": "integer", "description": "Timeout for help in seconds", "required": False, "default": 10}, {"name": "timeout_exec", "type": "integer", "description": "Timeout for execution in seconds", "required": False, "default": 30}]},
+                {"name": "parse", "description": "Parse command help text", "parameters": [{"name": "command_name", "type": "string", "description": "Name of the command to parse", "required": True}, {"name": "platform", "type": "string", "description": "Target platform", "required": False, "default": "auto"}, {"name": "timeout_help", "type": "integer", "description": "Timeout for help in seconds", "required": False, "default": 10}, {"name": "timeout_exec", "type": "integer", "description": "Timeout for execution in seconds", "required": False, "default": 30}]},
+                {"name": "execute", "description": "Execute a command", "parameters": [{"name": "command_name", "type": "string", "description": "Name of the command to execute", "required": True}, {"name": "args", "type": "array", "description": "Positional arguments", "required": False}, {"name": "options", "type": "string", "description": "JSON string of options", "required": False, "default": "{}"}, {"name": "platform", "type": "string", "description": "Target platform", "required": False, "default": "auto"}, {"name": "timeout_help", "type": "integer", "description": "Timeout for help in seconds", "required": False, "default": 10}, {"name": "timeout_exec", "type": "integer", "description": "Timeout for execution in seconds", "required": False, "default": 30}]}
+            ]
+        }))
+        sys.exit(0)
+
     if not args.command:
         parser.print_help()
         sys.exit(1)
